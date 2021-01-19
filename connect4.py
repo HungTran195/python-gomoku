@@ -1,75 +1,76 @@
-# Simple pygame program
-
-# Import and initialize the pygame library
 import pygame
 
-pygame.init()
 
-clock = pygame.time.Clock()
-# Set up the drawing window
-screen = pygame.display.set_mode([745, 745])
-pygame.display.set_caption("Connect 4")
+class MyWindow:
+    def __init__(self, win_size, num_of_horizontal_nodes, num_of_vertical_nodes):
+        super().__init__()
+        self.UNIT_RADIUS = 35
+        self.BACKGROUND_COLOR = (192, 192, 192)  # Silver
+        self.NODE_COLOR = (128, 128, 128)  # Grey
+        self.POINTING_NODE_COLOR = (211, 211, 211)  # Light Grey
+        self.PLAYER1_COLOR = (224, 226, 75)  # Light Yellow
+        self.PLAYER2_COLOR = (250, 103, 103)  # Light red
+        self.CONNECT_LINE_COLOR = (0, 255, 255)  # Cyan
+        self.nodes = {}
+        for i in range(num_of_vertical_nodes):
+            for j in range(num_of_horizontal_nodes):
+                self.nodes[(i, j)] = [self.NODE_COLOR, 0]
+        # Set up the drawing window
+        self.screen = pygame.display.set_mode(win_size)
 
-WIN_HEIGHT = 745
-WIN_WIFTH = 745
-UNIT_RADIUS = 35
+    def run_game(self):
 
-# Some color code used for
-SILVER = (192, 192, 192)
-LIGHT_GREY = (211, 211, 211)
-GREY = (128, 128, 128)
-LIGHT_YELLOW = (224, 226, 75)
-LIGHT_RED = (250, 103, 103)
-LIGHT_BLUE = (0, 0, 100)
-CYAN = (0, 255, 255)
+        running = True
+        prev_pointed = ()
 
-block = {}
+        while running:
+            pygame.time.delay(50)
 
-for i in range(10):
-    for j in range(10):
-        block[(i, j)] = [GREY, 0, False]
+            self.screen.fill(self.BACKGROUND_COLOR)
 
-prev_pointed = ()
-# Run until the user asks to quit
-running = True
-while running:
-    pygame.time.delay(100)
+            # check for all event happened in game
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
 
-    # Fill the background with white
-    screen.fill(SILVER)
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    x, y = self.get_node_index()
+                    if not self.nodes[(x, y)][1]:
+                        self.nodes[(x, y)] = [self.PLAYER1_COLOR, 1]
 
-    # Did the user click the window close button?
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
+                if event.type == pygame.MOUSEMOTION:
+                    x, y = self.get_node_index()
+                    if self.nodes.get(prev_pointed) and not self.nodes[prev_pointed][1]:
+                        self.nodes[prev_pointed] = [self.NODE_COLOR, 0]
+                    if not self.nodes[(x, y)][1]:
+                        self.nodes[(x, y)] = [self.POINTING_NODE_COLOR, 0]
+                    prev_pointed = (x, y)
+            self.draw_nodes()
+            # Updates the contents of the display to the screen
+            pygame.display.flip()
+        # Quit game
+        pygame.quit()
 
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            x, y = pygame.mouse.get_pos()
-            x = x//75
-            y = y // 75
-            if not block[(x, y)][2]:
-                block[(x, y)] = [LIGHT_YELLOW, 1, True]
-                # block[(x+1, y+1)] = [LIGHT_RED, 1, True]
-        if event.type == pygame.MOUSEMOTION:
-            x, y = pygame.mouse.get_pos()
-            x = x // 75
-            y = y // 75
+    def get_node_index(self):
+        x, y = pygame.mouse.get_pos()
+        x = x // 75
+        y = y // 75
+        return x, y
 
-            if block.get(prev_pointed) and not block[prev_pointed][2]:
-                block[prev_pointed] = [GREY, 0, False]
-            if not block[(x, y)][2]:
-                block[(x, y)] = [LIGHT_GREY, 0, False]
-            prev_pointed = (x, y)
+    def draw_nodes(self):
+        for i in range(10):
+            for j in range(10):
+                color = self.nodes[(i, j)][0]
+                pygame.draw.circle(self.screen, color,
+                                   (75*i + 35, 75*j + 35), self.UNIT_RADIUS)
 
-    # Draw a solid blue circle in the center
-    for i in range(10):
-        for j in range(10):
-            color = block[(i, j)][0]
-            pygame.draw.circle(screen, color,
-                               (75*i + 35, 75*j + 35), UNIT_RADIUS)
 
-    # Flip the display
-    pygame.display.flip()
-
-# Done! Time to quit.
-pygame.quit()
+if __name__ == "__main__":
+    pygame.init()
+    pygame.display.set_caption("Connect 4")
+    win_size = [745, 745]
+    num_of_horizontal_nodes = 10
+    num_of_vertical_nodes = 10
+    new_game = MyWindow(win_size, num_of_horizontal_nodes,
+                        num_of_vertical_nodes)
+    new_game.run_game()
