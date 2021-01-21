@@ -4,15 +4,16 @@ import pygame
 class MyWindow:
     def __init__(self, win_size, num_of_rows, num_of_cols):
         super().__init__()
-        self.UNIT_RADIUS = 25
+        self.UNIT_RADIUS = 20
         self.BACKGROUND_COLOR = (192, 192, 192)  # Silver
-        self.NODE_COLOR = (128, 128, 128)  # Grey
+        self.NODE_COLOR = (128, 128, 128, 0)  # Grey
         self.POINTING_NODE_COLOR = (211, 211, 211)  # Light Grey
         self.PLAYER1_COLOR = (224, 226, 75)  # Light Yellow
         self.PLAYER2_COLOR = (250, 103, 103)  # Light red
         self.CONNECT_LINE_COLOR = (0, 255, 255)  # Cyan
         self.num_of_rows = num_of_rows
         self.num_of_cols = num_of_cols
+        self.coff = self.UNIT_RADIUS*2+2
         self.reset_button_pos = [800, 600]
         self.font = pygame.font.SysFont('comic Sans MS', 30, True)
         self.isWinner = False
@@ -22,7 +23,7 @@ class MyWindow:
             for j in range(self.num_of_cols):
                 self.nodes[(i, j)] = [self.NODE_COLOR, 0]
         # Set up the drawing window
-        self.screen = pygame.display.set_mode(win_size)
+        self.screen = pygame.display.set_mode(win_size, flags=pygame.RESIZABLE)
 
     def run_game(self):
 
@@ -79,8 +80,8 @@ class MyWindow:
         if x >= 800 and x <= 990 and y >= 599 and y <= 650:
             self.reset_game()
             return None, None
-        x = x // 52
-        y = y // 52
+        x = x // self.coff
+        y = y // self.coff
         if x < self.num_of_rows and y < self.num_of_cols:
             return x, y
         return None, None
@@ -89,8 +90,11 @@ class MyWindow:
         for i in range(self.num_of_rows):
             for j in range(self.num_of_cols):
                 color = self.nodes[(i, j)][0]
+
                 pygame.draw.circle(self.screen, color,
-                                   (52*i + 30, 52*j + 30), self.UNIT_RADIUS)
+                                   (self.coff*i + self.UNIT_RADIUS + 5,
+                                    self.coff*j + self.UNIT_RADIUS + 5),
+                                   self.UNIT_RADIUS)
 
     def draw_side_bar(self, isTurn=True):
         player1 = self.font.render('Player 1', 1, (0, 0, 0))
@@ -216,9 +220,9 @@ class MyWindow:
 if __name__ == "__main__":
     pygame.init()
     pygame.display.set_caption("Connect 4")
-    win_size = [1000, 790]
+    num_of_rows = 20
+    num_of_cols = 20
+    win_size = [1000, 850]
 
-    num_of_rows = 15
-    num_of_cols = 15
     new_game = MyWindow(win_size, num_of_rows, num_of_cols)
     new_game.run_game()
