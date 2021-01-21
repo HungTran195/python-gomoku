@@ -30,9 +30,11 @@ class MyWindow:
 
         running = True
         prev_pointed = ()
+        clock = pygame.time.Clock()
 
         while running:
-            pygame.time.delay(50)
+            # make sure games doesn't run faster than 24 frames per second.
+            clock.tick(24)
 
             self.screen.fill(self.BACKGROUND_COLOR)
 
