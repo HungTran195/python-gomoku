@@ -6,11 +6,11 @@ class MyWindow:
         super().__init__()
         self.UNIT_RADIUS = 20
         self.BACKGROUND_COLOR = (192, 192, 192)  # Silver
-        self.NODE_COLOR = (128, 128, 128, 0)  # Grey
+        self.NODE_COLOR = (128, 128, 128)  # Grey
         self.POINTING_NODE_COLOR = (211, 211, 211)  # Light Grey
         self.PLAYER1_COLOR = (224, 226, 75)  # Light Yellow
         self.PLAYER2_COLOR = (250, 103, 103)  # Light red
-        self.CONNECT_LINE_COLOR = (0, 255, 255)  # Cyan
+        self.WINNER_COLOR = (0, 255, 255)  # Cyan
         self.num_of_rows = num_of_rows
         self.num_of_cols = num_of_cols
         self.coff = self.UNIT_RADIUS*2+2
@@ -19,6 +19,7 @@ class MyWindow:
         self.isWinner = False
         self.isTurn = True
         self.nodes = {}
+        self.winning_line = []
         for i in range(self.num_of_rows):
             for j in range(self.num_of_cols):
                 self.nodes[(i, j)] = [self.NODE_COLOR, 0]
@@ -41,6 +42,7 @@ class MyWindow:
                     running = False
 
                 if event.type == pygame.MOUSEBUTTONDOWN:
+
                     x, y = self.get_node_index()
                     if x is not None and y is not None and not self.nodes[(x, y)][1] and not self.isWinner:
                         if self.isTurn:
@@ -51,7 +53,10 @@ class MyWindow:
                             self.isWinner = self.check_winner(x, y, 2)
 
                         self.isTurn = not(self.isTurn)
-
+                    else:
+                        x, y = pygame.mouse.get_pos()
+                        if x >= 800 and x <= 985 and y >= 600 and y <= 650:
+                            self.reset_game()
                 if event.type == pygame.MOUSEMOTION:
                     x, y = self.get_node_index()
                     if x is not None and y is not None:
@@ -60,14 +65,14 @@ class MyWindow:
                         if not self.nodes[(x, y)][1]:
                             self.nodes[(x, y)] = [self.POINTING_NODE_COLOR, 0]
                         prev_pointed = (x, y)
-            self.draw_nodes()
-            self.draw_side_bar(self.isTurn)
-
             if self.isWinner:
                 if not self.isTurn:
                     self.draw_winner('Player 1')
                 else:
                     self.draw_winner('Player 2')
+
+            self.draw_nodes()
+            self.draw_side_bar(self.isTurn)
 
             # Updates the contents of the display to the screen
             # pygame.display.flip()
@@ -77,9 +82,7 @@ class MyWindow:
 
     def get_node_index(self):
         x, y = pygame.mouse.get_pos()
-        if x >= 800 and x <= 990 and y >= 599 and y <= 650:
-            self.reset_game()
-            return None, None
+
         x = x // self.coff
         y = y // self.coff
         if x < self.num_of_rows and y < self.num_of_cols:
@@ -99,41 +102,39 @@ class MyWindow:
     def draw_side_bar(self, isTurn=True):
         player1 = self.font.render('Player 1', 1, (0, 0, 0))
         player2 = self.font.render('Player 2', 1, (0, 0, 0))
-        reset = self.font.render('Reset Game', 1, (0, 0, 0))
+        reset = self.font.render('Reset', 1, (0, 0, 0))
         if isTurn:
             color1 = self.PLAYER1_COLOR
             color2 = (50, 90, 90)
         else:
             color1 = (50, 90, 90)
             color2 = self.PLAYER2_COLOR
-        pygame.draw.rect(self.screen, color1, (840, 100, 135, 50))
-        pygame.draw.rect(self.screen, color2, (840, 200, 135, 50))
-        pygame.draw.rect(self.screen, (50, 90, 190), (800, 600, 190, 50))
-        self.screen.blit(player1, (850, 100))
-        self.screen.blit(player2, (850, 200))
-        self.screen.blit(reset, (810, 600))
+        pygame.draw.rect(self.screen, color1, (850, 100, 135, 50))
+        pygame.draw.rect(self.screen, color2, (850, 200, 135, 50))
+        pygame.draw.rect(self.screen, (50, 90, 190), (850, 600, 135, 50))
+        self.screen.blit(player1, (855, 100))
+        self.screen.blit(player2, (855, 200))
+        self.screen.blit(reset, (875, 600))
 
     def draw_winner(self, name):
         playerName = self.font.render(name, 1, (0, 0, 0))
-        text = self.font.render('is the Winner', 1, (0, 0, 0))
+        text = self.font.render('Winner: ', 1, (0, 0, 0))
         if name == 'Player 1':
             color = self.PLAYER1_COLOR
         else:
             color = self.PLAYER2_COLOR
 
-        pygame.draw.rect(self.screen, color, (790, 400, 205, 100))
-        self.screen.blit(playerName, (850, 400))
-        self.screen.blit(text, (790, 450))
+        for node in self.winning_line:
+            self.nodes[node][0] = self.WINNER_COLOR
+
+        pygame.draw.rect(self.screen, color, (850, 400, 135, 100))
+        self.screen.blit(text, (855, 400))
+        self.screen.blit(playerName, (855, 450))
 
     def check_winner(self, x, y, target):
-        if self.count_connected(x, y, target, 'up_down') == 4:
-            return True
-        if self.count_connected(x, y, target, 'left_right') == 4:
-            return True
-        if self.count_connected(x, y, target, 'up_left') == 4:
-            return True
-        if self.count_connected(x, y, target, 'down_right') == 4:
-            return True
+        for direction in ['up_down', 'left_right', 'up_left', 'down_right']:
+            if self.count_connected(x, y, target, direction) == 4:
+                return True
         return False
 
     def count_connected(self, x, y, target, dir):
@@ -154,7 +155,6 @@ class MyWindow:
                     seen.add((x, y+1))
                     count += 1
                 x, y = stack.pop()
-            return count
 
         if dir == 'left_right':
             stack.append((x, y))
@@ -170,7 +170,6 @@ class MyWindow:
                     seen.add((x+1, y))
                     count += 1
                 x, y = stack.pop()
-            return count
 
         if dir == 'up_left':
             stack.append((x, y))
@@ -186,7 +185,6 @@ class MyWindow:
                     seen.add((x-1, y-1))
                     count += 1
                 x, y = stack.pop()
-            return count
 
         if dir == 'down_right':
             stack.append((x, y))
@@ -202,9 +200,11 @@ class MyWindow:
                     seen.add((x+1, y-1))
                     count += 1
                 x, y = stack.pop()
-            return count
 
-        return count
+        if count == 4:
+            self.winning_line = seen
+            return count
+        return None
 
     def reset_game(self):
         for i in range(self.num_of_rows):
@@ -212,6 +212,7 @@ class MyWindow:
                 self.nodes[(i, j)] = [self.NODE_COLOR, 0]
         self.isWinner = False
         self.isTurn = True
+        self.winning_line = []
 
     def find_best_move(self, x, y):
         pass
