@@ -110,8 +110,7 @@ class MyWindow(ConnectionListener):
         clock = pygame.time.Clock()
 
         while running:
-            connection.Pump()
-            self.Pump()
+
             # make sure games doesn't run faster than 24 frames per second.
             clock.tick(24)
 
@@ -126,14 +125,12 @@ class MyWindow(ConnectionListener):
             #     self.reset_game()
             x, y = x // self.coff, y // self.coff
             if x < self.num_of_rows and y < self.num_of_cols:
-                if not self.nodes[prev_pointed][1]:
-                    print(prev_pointed)
-                    self.nodes[prev_pointed] = [self.NODE_COLOR, 0]
-                    if not self.nodes[(x, y)][1]:
-                        self.nodes[(x, y)] = [self.POINTING_NODE_COLOR, 0]
+                if not self.nodes[(x, y)][1]:
+                    if not self.nodes[prev_pointed][1]:
+                        self.nodes[prev_pointed] = [self.NODE_COLOR, 0]
+                    self.nodes[(x, y)] = [self.POINTING_NODE_COLOR, 0]
                     prev_pointed = (x, y)
                 if pygame.mouse.get_pressed()[0] and self.isTurn and not self.isWinner and not self.nodes[(x, y)][1]:
-                    print(prev_pointed)
 
                     self.Send({"action": "place", "x": x, "y": y,
                                "game_id": self.game_id, "player_id": self.player_id})
@@ -148,8 +145,10 @@ class MyWindow(ConnectionListener):
             self.draw_side_bar(self.isTurn)
 
             # Updates the contents of the display to the screen
-            pygame.display.flip()
-            # pygame.display.update()
+            # pygame.display.flip()
+            pygame.display.update()
+            connection.Pump()
+            self.Pump()
         # Quit game
         pygame.quit()
 
