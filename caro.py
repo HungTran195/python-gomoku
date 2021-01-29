@@ -1,7 +1,54 @@
 import pygame
+from PodSixNet.Connection import ConnectionListener, connection
+from time import sleep
 
 
-class MyWindow:
+class MyWindow(ConnectionListener):
+    def Network_startgame(self, data):
+        print(data)
+        self.running = True
+        self.num = data["player"]
+        self.game_id = data["game_id"]
+
+    def Network_connected(self, data):
+        print("connected to the server")
+
+    def Network_disconnected(self, data):
+        print("disconnected from the server")
+
+    def Network_yourturn(self, data):
+        # torf = short for true or false
+        self.isTurn = data["torf"]
+
+    def Network_place(self, data):
+        x = data["x"]
+        y = data["y"]
+        num = data["num"]
+
+        if num == 0:
+            self.nodes[(x, y)] = [self.PLAYER1_COLOR, 1]
+        #     self.isWinner = self.check_winner(x, y, 1)
+        else:
+            self.nodes[(x, y)] = [self.PLAYER2_COLOR, 2]
+
+    def Network_close(self, data):
+        print("close from the server")
+        exit()
+
+    def Network_win(self, data):
+        print('winner', data)
+        self.isWinner = True
+        self.isTurn = data["torf"]
+        self.winning_line = data['winning_line']
+        # self.draw_winner()
+
+    def Network_lose(self, data):
+        print('loser', data)
+        self.isTurn = data["torf"]
+        self.isWinner = True
+        self.winning_line = data['winning_line']
+        # self.draw_loser()
+
     def __init__(self, win_size, num_of_rows, num_of_cols):
         super().__init__()
         self.UNIT_RADIUS = 20
@@ -20,19 +67,52 @@ class MyWindow:
         self.isTurn = True
         self.nodes = {}
         self.winning_line = []
+        self.game_id = None
+        self.num = None
+
         for i in range(self.num_of_rows):
             for j in range(self.num_of_cols):
                 self.nodes[(i, j)] = [self.NODE_COLOR, 0]
         # Set up the drawing window
         self.screen = pygame.display.set_mode(win_size, flags=pygame.RESIZABLE)
 
-    def run_game(self):
+        address = input("Address of Server: ")
+        try:
+            if not address:
+                host, port = "localhost", 8000
+            else:
+                host, port = address.split(":")
+            self.Connect((host, int(port)))
+        except:
+            print("Error Connecting to Server")
+            print("Usage:", "host:port")
+            print("e.g.", "localhost:31425")
+            exit()
+        print("Boxes client started")
 
+        self.running = False
+        while not self.running:
+            self.Pump()
+            connection.Pump()
+            sleep(0.001)
+
+        if self.num == 0:
+            self.isTurn = True
+            self.player_color = self.PLAYER1_COLOR
+        else:
+            self.isTurn = False
+            self.player_color = self.PLAYER2_COLOR
+
+        # print('Done')
+
+    def run_game(self):
         running = True
-        prev_pointed = ()
+        prev_pointed = (0, 0)
         clock = pygame.time.Clock()
 
         while running:
+            connection.Pump()
+            self.Pump()
             # make sure games doesn't run faster than 24 frames per second.
             clock.tick(24)
 
@@ -43,35 +123,37 @@ class MyWindow:
                 if event.type == pygame.QUIT:
                     running = False
 
-                if event.type == pygame.MOUSEBUTTONDOWN:
+            x, y = pygame.mouse.get_pos()
+            # if x >= 800 and x <= 985 and y >= 600 and y <= 650 and pygame.mouse.get_pressed()[0]:
+            #     self.reset_game()
+            x, y = x // self.coff, y // self.coff
+            if x < self.num_of_rows and y < self.num_of_cols:
+                # self.Send({"action": "place", "x": x, "y": y,
+                #            "game_id": self.game_id, "num": self.num})
+                if not self.nodes[prev_pointed][1]:
+                    self.nodes[prev_pointed] = [self.NODE_COLOR, 0]
+                    if not self.nodes[(x, y)][1]:
+                        self.nodes[(x, y)] = [self.POINTING_NODE_COLOR, 0]
+                    prev_pointed = (x, y)
+                if pygame.mouse.get_pressed()[0] and self.isTurn and not self.isWinner and not self.nodes[(x, y)][1]:
+                    # if self.isTurn:
+                    #     self.nodes[(x, y)] = [self.PLAYER1_COLOR, 1]
+                    # #     self.isWinner = self.check_winner(x, y, 1)
+                    # else:
+                    #     self.nodes[(x, y)] = [self.PLAYER2_COLOR, 2]
+                    #     self.isWinner = self.check_winner(x, y, 2)
 
-                    x, y = self.get_node_index()
-                    if x is not None and y is not None and not self.nodes[(x, y)][1] and not self.isWinner:
-                        if self.isTurn:
-                            self.nodes[(x, y)] = [self.PLAYER1_COLOR, 1]
-                            self.isWinner = self.check_winner(x, y, 1)
-                        else:
-                            self.nodes[(x, y)] = [self.PLAYER2_COLOR, 2]
-                            self.isWinner = self.check_winner(x, y, 2)
+                    # self.isTurn = not(self.isTurn)
+                    # self.nodes[(x, y)] = [self.player_color, self.isTurn + 1]
 
-                        self.isTurn = not(self.isTurn)
-                    else:
-                        x, y = pygame.mouse.get_pos()
-                        if x >= 800 and x <= 985 and y >= 600 and y <= 650:
-                            self.reset_game()
-                if event.type == pygame.MOUSEMOTION:
-                    x, y = self.get_node_index()
-                    if x is not None and y is not None:
-                        if self.nodes.get(prev_pointed) and not self.nodes[prev_pointed][1]:
-                            self.nodes[prev_pointed] = [self.NODE_COLOR, 0]
-                        if not self.nodes[(x, y)][1]:
-                            self.nodes[(x, y)] = [self.POINTING_NODE_COLOR, 0]
-                        prev_pointed = (x, y)
+                    self.Send({"action": "place", "x": x, "y": y,
+                               "game_id": self.game_id, "num": self.num})
+
             if self.isWinner:
-                if not self.isTurn:
-                    self.draw_winner('Player 1')
+                if self.isTurn:
+                    self.draw_winner()
                 else:
-                    self.draw_winner('Player 2')
+                    self.draw_loser()
 
             self.draw_nodes()
             self.draw_side_bar(self.isTurn)
@@ -81,15 +163,6 @@ class MyWindow:
             pygame.display.update()
         # Quit game
         pygame.quit()
-
-    def get_node_index(self):
-        x, y = pygame.mouse.get_pos()
-
-        x = x // self.coff
-        y = y // self.coff
-        if x < self.num_of_rows and y < self.num_of_cols:
-            return x, y
-        return None, None
 
     def draw_nodes(self):
         for i in range(self.num_of_rows):
@@ -101,37 +174,58 @@ class MyWindow:
                                     self.coff*j + self.UNIT_RADIUS + 5),
                                    self.UNIT_RADIUS)
 
-    def draw_side_bar(self, isTurn=True):
-        player1 = self.font.render('Player 1', 1, (0, 0, 0))
-        player2 = self.font.render('Player 2', 1, (0, 0, 0))
-        reset = self.font.render('Reset', 1, (0, 0, 0))
+    def draw_side_bar(self, isTurn):
         if isTurn:
-            color1 = self.PLAYER1_COLOR
-            color2 = (50, 90, 90)
+            color = self.player_color
         else:
-            color1 = (50, 90, 90)
-            color2 = self.PLAYER2_COLOR
-        pygame.draw.rect(self.screen, color1, (850, 100, 135, 50))
-        pygame.draw.rect(self.screen, color2, (850, 200, 135, 50))
-        pygame.draw.rect(self.screen, (50, 90, 190), (850, 600, 135, 50))
-        self.screen.blit(player1, (855, 100))
-        self.screen.blit(player2, (855, 200))
-        self.screen.blit(reset, (875, 600))
+            color = (50, 90, 90)
 
-    def draw_winner(self, name):
-        playerName = self.font.render(name, 1, (0, 0, 0))
-        text = self.font.render('Winner: ', 1, (0, 0, 0))
-        if name == 'Player 1':
-            color = self.PLAYER1_COLOR
-        else:
-            color = self.PLAYER2_COLOR
+        text = self.font.render('Your Turn', 1, (0, 0, 0))
+        pygame.draw.rect(self.screen, color, (848, 100, 147, 50))
+        self.screen.blit(text, (850, 100))
+
+        # player1 = self.font.render('Player 1', 1, (0, 0, 0))
+        # player2 = self.font.render('Player 2', 1, (0, 0, 0))
+        # reset = self.font.render('Reset', 1, (0, 0, 0))
+        # if isTurn:
+        #     color1 = self.PLAYER1_COLOR
+        #     color2 = (50, 90, 90)
+        # else:
+        #     color1 = (50, 90, 90)
+        #     color2 = self.PLAYER2_COLOR
+        # pygame.draw.rect(self.screen, color1, (850, 100, 135, 50))
+        # pygame.draw.rect(self.screen, color2, (850, 200, 135, 50))
+        # pygame.draw.rect(self.screen, (50, 90, 190), (850, 600, 135, 50))
+        # self.screen.blit(player1, (855, 100))
+        # self.screen.blit(player2, (855, 200))
+        # self.screen.blit(reset, (875, 600))
+
+    def draw_winner(self, name=None):
+        # playerName = self.font.render(name, 1, (0, 0, 0))
+        # text = self.font.render('Winner: ', 1, (0, 0, 0))
+
+        # if name == 'Player 1':
+        #     color = self.PLAYER1_COLOR
+        # else:
+        #     color = self.PLAYER2_COLOR
 
         for node in self.winning_line:
             self.nodes[node][0] = self.WINNER_COLOR
 
-        pygame.draw.rect(self.screen, color, (850, 400, 135, 100))
+        text = self.font.render('You Win!', 1, (0, 0, 0))
+
+        pygame.draw.rect(self.screen, self.player_color, (850, 400, 140, 50))
         self.screen.blit(text, (855, 400))
-        self.screen.blit(playerName, (855, 450))
+        # self.screen.blit(playerName, (855, 450))
+
+    def draw_loser(self):
+        for node in self.winning_line:
+            self.nodes[node][0] = self.WINNER_COLOR
+
+        text = self.font.render('You Lose!', 1, (0, 0, 0))
+
+        pygame.draw.rect(self.screen, self.player_color, (850, 400, 142, 50))
+        self.screen.blit(text, (855, 400))
 
     def check_winner(self, x, y, target):
         for direction in ['up_down', 'left_right', 'up_left', 'down_right']:
