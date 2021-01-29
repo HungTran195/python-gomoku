@@ -7,7 +7,7 @@ class MyWindow(ConnectionListener):
     def Network_startgame(self, data):
         print(data)
         self.running = True
-        self.num = data["player"]
+        self.player_id = data["player"]
         self.game_id = data["game_id"]
 
     def Network_connected(self, data):
@@ -23,11 +23,10 @@ class MyWindow(ConnectionListener):
     def Network_place(self, data):
         x = data["x"]
         y = data["y"]
-        num = data["num"]
+        player_id = data["player_id"]
 
-        if num == 0:
+        if player_id == 0:
             self.nodes[(x, y)] = [self.PLAYER1_COLOR, 1]
-        #     self.isWinner = self.check_winner(x, y, 1)
         else:
             self.nodes[(x, y)] = [self.PLAYER2_COLOR, 2]
 
@@ -68,7 +67,7 @@ class MyWindow(ConnectionListener):
         self.nodes = {}
         self.winning_line = []
         self.game_id = None
-        self.num = None
+        self.player_id = None
 
         for i in range(self.num_of_rows):
             for j in range(self.num_of_cols):
@@ -96,7 +95,7 @@ class MyWindow(ConnectionListener):
             connection.Pump()
             sleep(0.001)
 
-        if self.num == 0:
+        if self.player_id == 0:
             self.isTurn = True
             self.player_color = self.PLAYER1_COLOR
         else:
@@ -118,7 +117,6 @@ class MyWindow(ConnectionListener):
 
             self.screen.fill(self.BACKGROUND_COLOR)
 
-            # check for all event happened in game
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
@@ -128,26 +126,17 @@ class MyWindow(ConnectionListener):
             #     self.reset_game()
             x, y = x // self.coff, y // self.coff
             if x < self.num_of_rows and y < self.num_of_cols:
-                # self.Send({"action": "place", "x": x, "y": y,
-                #            "game_id": self.game_id, "num": self.num})
                 if not self.nodes[prev_pointed][1]:
+                    print(prev_pointed)
                     self.nodes[prev_pointed] = [self.NODE_COLOR, 0]
                     if not self.nodes[(x, y)][1]:
                         self.nodes[(x, y)] = [self.POINTING_NODE_COLOR, 0]
                     prev_pointed = (x, y)
                 if pygame.mouse.get_pressed()[0] and self.isTurn and not self.isWinner and not self.nodes[(x, y)][1]:
-                    # if self.isTurn:
-                    #     self.nodes[(x, y)] = [self.PLAYER1_COLOR, 1]
-                    # #     self.isWinner = self.check_winner(x, y, 1)
-                    # else:
-                    #     self.nodes[(x, y)] = [self.PLAYER2_COLOR, 2]
-                    #     self.isWinner = self.check_winner(x, y, 2)
-
-                    # self.isTurn = not(self.isTurn)
-                    # self.nodes[(x, y)] = [self.player_color, self.isTurn + 1]
+                    print(prev_pointed)
 
                     self.Send({"action": "place", "x": x, "y": y,
-                               "game_id": self.game_id, "num": self.num})
+                               "game_id": self.game_id, "player_id": self.player_id})
 
             if self.isWinner:
                 if self.isTurn:
@@ -159,8 +148,8 @@ class MyWindow(ConnectionListener):
             self.draw_side_bar(self.isTurn)
 
             # Updates the contents of the display to the screen
-            # pygame.display.flip()
-            pygame.display.update()
+            pygame.display.flip()
+            # pygame.display.update()
         # Quit game
         pygame.quit()
 
@@ -181,34 +170,10 @@ class MyWindow(ConnectionListener):
             color = (50, 90, 90)
 
         text = self.font.render('Your Turn', 1, (0, 0, 0))
-        pygame.draw.rect(self.screen, color, (848, 100, 147, 50))
+        pygame.draw.rect(self.screen, color, (848, 100, 148, 50))
         self.screen.blit(text, (850, 100))
 
-        # player1 = self.font.render('Player 1', 1, (0, 0, 0))
-        # player2 = self.font.render('Player 2', 1, (0, 0, 0))
-        # reset = self.font.render('Reset', 1, (0, 0, 0))
-        # if isTurn:
-        #     color1 = self.PLAYER1_COLOR
-        #     color2 = (50, 90, 90)
-        # else:
-        #     color1 = (50, 90, 90)
-        #     color2 = self.PLAYER2_COLOR
-        # pygame.draw.rect(self.screen, color1, (850, 100, 135, 50))
-        # pygame.draw.rect(self.screen, color2, (850, 200, 135, 50))
-        # pygame.draw.rect(self.screen, (50, 90, 190), (850, 600, 135, 50))
-        # self.screen.blit(player1, (855, 100))
-        # self.screen.blit(player2, (855, 200))
-        # self.screen.blit(reset, (875, 600))
-
     def draw_winner(self, name=None):
-        # playerName = self.font.render(name, 1, (0, 0, 0))
-        # text = self.font.render('Winner: ', 1, (0, 0, 0))
-
-        # if name == 'Player 1':
-        #     color = self.PLAYER1_COLOR
-        # else:
-        #     color = self.PLAYER2_COLOR
-
         for node in self.winning_line:
             self.nodes[node][0] = self.WINNER_COLOR
 
@@ -216,7 +181,6 @@ class MyWindow(ConnectionListener):
 
         pygame.draw.rect(self.screen, self.player_color, (850, 400, 140, 50))
         self.screen.blit(text, (855, 400))
-        # self.screen.blit(playerName, (855, 450))
 
     def draw_loser(self):
         for node in self.winning_line:
@@ -226,81 +190,6 @@ class MyWindow(ConnectionListener):
 
         pygame.draw.rect(self.screen, self.player_color, (850, 400, 142, 50))
         self.screen.blit(text, (855, 400))
-
-    def check_winner(self, x, y, target):
-        for direction in ['up_down', 'left_right', 'up_left', 'down_right']:
-            if self.count_connected(x, y, target, direction) == 4:
-                return True
-        return False
-
-    def count_connected(self, x, y, target, dir):
-        count = 1
-        stack = []
-        seen = set()
-        if dir == 'up_down':
-            stack.append((x, y))
-            seen.add((x, y))
-            while stack:
-                if y > 0 and self.nodes[(x, y-1)][1] == target and (x, y-1) not in seen:
-                    stack.append((x, y-1))
-                    seen.add((x, y-1))
-                    count += 1
-
-                if y + 1 < self.num_of_cols and self.nodes[(x, y+1)][1] == target and (x, y+1) not in seen:
-                    stack.append((x, y+1))
-                    seen.add((x, y+1))
-                    count += 1
-                x, y = stack.pop()
-
-        if dir == 'left_right':
-            stack.append((x, y))
-            seen.add((x, y))
-            while stack:
-                if x > 0 and self.nodes[(x-1, y)][1] == target and (x-1, y) not in seen:
-                    stack.append((x-1, y))
-                    seen.add((x-1, y))
-                    count += 1
-
-                if x + 1 < self.num_of_rows and self.nodes[(x+1, y)][1] == target and (x+1, y) not in seen:
-                    stack.append((x+1, y))
-                    seen.add((x+1, y))
-                    count += 1
-                x, y = stack.pop()
-
-        if dir == 'up_left':
-            stack.append((x, y))
-            seen.add((x, y))
-            while stack:
-                if x + 1 < self.num_of_cols and y + 1 < self.num_of_cols and self.nodes[(x+1, y+1)][1] == target and (x+1, y+1) not in seen:
-                    stack.append((x+1, y+1))
-                    seen.add((x+1, y+1))
-                    count += 1
-
-                if x > 0 and y > 0 and self.nodes[(x-1, y-1)][1] == target and (x-1, y-1) not in seen:
-                    stack.append((x-1, y-1))
-                    seen.add((x-1, y-1))
-                    count += 1
-                x, y = stack.pop()
-
-        if dir == 'down_right':
-            stack.append((x, y))
-            seen.add((x, y))
-            while stack:
-                if x > 0 and y + 1 < self.num_of_cols and self.nodes[(x-1, y+1)][1] == target and (x-1, y+1) not in seen:
-                    stack.append((x-1, y+1))
-                    seen.add((x-1, y+1))
-                    count += 1
-
-                if x + 1 < self.num_of_cols and y > 0 and self.nodes[(x+1, y-1)][1] == target and (x+1, y-1) not in seen:
-                    stack.append((x+1, y-1))
-                    seen.add((x+1, y-1))
-                    count += 1
-                x, y = stack.pop()
-
-        if count == 4:
-            self.winning_line = seen
-            return count
-        return None
 
     def reset_game(self):
         for i in range(self.num_of_rows):

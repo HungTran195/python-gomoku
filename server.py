@@ -5,12 +5,11 @@ from time import sleep
 
 class ClientChannel(Channel):
     def Network(self, data):
-        # print(data)
-        pass
+        print(data)
 
     def Network_place(self, data):
         # player number (1 or 0)
-        num = data["num"]
+        player_id = data["player_id"]
 
         x = data["x"]
         y = data["y"]
@@ -18,7 +17,7 @@ class ClientChannel(Channel):
         # id of game given by server at start of game
         self.game_id = data["game_id"]
 
-        self._server.placeDot(x, y, data, self.game_id, num)
+        self._server.placeDot(x, y, data, self.game_id, player_id)
 
     def Close(self):
         self._server.close(self.game_id)
@@ -49,10 +48,10 @@ class MyServer(Server):
             self.games.append(self.queue)
             self.queue = None
 
-    def placeDot(self, x, y, data, game_id, num):
+    def placeDot(self, x, y, data, game_id, player_id):
         game = [a for a in self.games if a.game_id == game_id]
         if len(game) == 1:
-            game[0].placeDot(x, y, data, num)
+            game[0].placeDot(x, y, data, player_id)
 
     def close(self, game_id):
         try:
@@ -61,12 +60,6 @@ class MyServer(Server):
             game.player1.Send({"action": "close"})
         except:
             pass
-
-    # def tick(self):
-    #     print('tick')
-    #     # Check for any wins
-
-    #     self.Pump()
 
 
 class Game:
@@ -83,11 +76,11 @@ class Game:
             for j in range(self.num_of_cols):
                 self.nodes[(i, j)] = 0
 
-    def placeDot(self, x, y, data, num):
-        if num == self.turn:
-            self.nodes[(x, y)] = num + 1
-            if self.isWinningMove(x, y, num+1):
-                if num:
+    def placeDot(self, x, y, data, player_id):
+        if player_id == self.turn:
+            self.nodes[(x, y)] = player_id + 1
+            if self.isWinningMove(x, y, player_id+1):
+                if player_id:
                     self.player1.Send(
                         {"action": "win", "winning_line": self.winning_line, "torf": True})
                     self.player0.Send(
