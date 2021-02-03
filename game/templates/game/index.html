@@ -1,0 +1,59 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{%static 'game/style.css' %}">
+    <title>Document</title>
+</head>
+
+<body>
+    <header id="header">
+        <nav id="navbar" class="navbar">
+            <div id="logo">
+                <a href=""><img src="{%static 'game/images/logo.png' %}"></a>
+            </div>
+            <h1 class="title">Gomoku</h1>
+        </nav>
+    </header>
+    <main>
+        <div class="start-page hidden">
+
+        </div>
+        <div class="play-board" id="play-board">
+            {% for row in numRow %}
+            {% for col in numCol %}
+            <div class="cell " id="cell-{{row}}-{{col}}"></div>
+            {%endfor%}
+            {%endfor%}
+        </div>
+
+    </main>
+
+    <script>
+        let turn = true;
+        const allCells = document.getElementById('play-board');
+        for (const child of allCells.children) {
+            child.addEventListener('click', () => {
+                if (!child.textContent) {
+                    if (turn) {
+                        child.textContent = 'X';
+                    }
+                    else {
+                        child.textContent = 'O';
+                    }
+                    turn = !turn;
+                }
+            });
+        }
+
+
+    </script>
+
+
+
+</body>
+
+</html>

@@ -1,4 +1,7 @@
 __pycache__/
 *.py[cod]
-
+venv/
 *.mp4
+*.whl
+*_copy.*
+.vscode/
