@@ -10,7 +10,17 @@ https://docs.djangoproject.com/en/3.1/howto/deployment/wsgi/
 import os
 
 from django.core.wsgi import get_wsgi_application
+import socketio
+import eventlet
+from django.contrib.staticfiles.handlers import StaticFilesHandler
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'caro_game.settings')
+from game.views import sio
 
-application = get_wsgi_application()
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "django_example.settings")
+
+django_app = StaticFilesHandler(get_wsgi_application())
+application = socketio.Middleware(
+    sio, wsgi_app=django_app, socketio_path='socket.io')
+
+
+eventlet.wsgi.server(eventlet.listen(('', 8000)), application)

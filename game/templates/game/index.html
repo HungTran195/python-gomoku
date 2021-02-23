@@ -5,54 +5,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{%static 'game/style.css' %}">
+    <script type="text/javascript" src="//code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.3/socket.io.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="{% static 'game/style.css' %}">
+    <link rel="shortcut icon" type="image/png" href="{% static 'game/favicon.ico' %}" />
+
     <title>Document</title>
+
 </head>
 
 <body>
     <header id="header">
         <nav id="navbar" class="navbar">
             <div id="logo">
-                <a href=""><img src="{%static 'game/images/logo.png' %}"></a>
+                <a href="{% url 'game:index' %}"><img src="{%static 'game/images/logo.png' %}"></a>
             </div>
-            <h1 class="title">Gomoku</h1>
+            <a href="{% url 'game:index' %}">
+                <h1 class="title">Gomoku</h1>
+            </a>
         </nav>
     </header>
     <main>
-        <div class="start-page hidden">
+        <div class="lobby" id="lobby">
+            {% if is_start_page %}
+            <div class="start-page ">
+                <p>This is the your room: <a id="room_url" href="{{room_url}}">{{room_url}}</a> </p>
+                <p>Please share it to your friend and start playing</p>
+            </div>
+            {% else %}
+            <div class="confirm-box">
+                <p>You are about to play with {{player_name}}</p>
+            </div>
+            {% endif %}
 
+            <button class="btn confirm-btn" onclick="start_game()">Let's go</button>
         </div>
-        <div class="play-board" id="play-board">
-            {% for row in numRow %}
-            {% for col in numCol %}
-            <div class="cell " id="cell-{{row}}-{{col}}"></div>
-            {%endfor%}
+
+        <div class="error_msg hidden">
+            <p id="error_msg"></p>
+        </div>
+
+        <div class="play-board hidden" id="play-board">
+            {% for index, value in play_board_1D_array.items %}
+            <div class="broadcast">
+                <div class="cell" id="{{index}}">{{value}}</div>
+            </div>
             {%endfor%}
         </div>
+
+
 
     </main>
 
-    <script>
-        let turn = true;
-        const allCells = document.getElementById('play-board');
-        for (const child of allCells.children) {
-            child.addEventListener('click', () => {
-                if (!child.textContent) {
-                    if (turn) {
-                        child.textContent = 'X';
-                    }
-                    else {
-                        child.textContent = 'O';
-                    }
-                    turn = !turn;
-                }
-            });
-        }
-
-
-    </script>
-
-
+    <script src="{% static 'game/script.js' %}"></script>
 
 </body>
 

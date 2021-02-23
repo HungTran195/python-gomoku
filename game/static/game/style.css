@@ -51,10 +51,9 @@ p {
 }
 
 .start-page {
-    height: 400px;
-    width: 80%;
+    width: 50%;
     margin: 40px auto;
-    background-color: sandybrown;
+    background-color: beige;
 
 }
 
@@ -81,8 +80,31 @@ p {
     justify-content: center;
     font-size: 2rem;
     font-weight: 600;
+    height: 100%;
+    width: 100%;
 }
 
 .hidden {
     display: none;
+}
+
+.room-id {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+}
+
+.room-id .text-field {
+    padding: 5px;
+    border-radius: 6px;
+    border: 1px black solid;
+}
+
+.btn {
+    padding: 5px 20px;
+    margin: 10px;
+    border-radius: 6px;
+    border: 1px black solid;
+
 }
