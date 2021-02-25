@@ -92,7 +92,7 @@ def start_game(sid, game_id):
     global games
     err_msg = ''
     game_id = int(re.sub("[^0-9]+", " ", game_id))
-    room = ''
+    data = None
     if not game_id:
         status = 'failed'
         err_msg = 'There is something wrong, please reload page!'
@@ -104,49 +104,24 @@ def start_game(sid, game_id):
     else:
         status = 'success'
         game = games[game_id]
+
         if len(game.player_id) > 1:
             err_msg = 'Room is full!'
-            room = sid
         else:
             game.create_new_game(game_id, sid)
             sio.enter_room(sid, game_id)
 
+            if len(game.player_id) == 2:
+                for id, turn in game.player_id.items():
+                    data = {'status:': status,
+                            'turn': turn}
+                    sio.emit('start_game', data, room=id)
+
         print('\n Game', game.player_id, err_msg)
 
-    data = {'status:': status,
-            'err_msg': err_msg}
-    if room:
-        sio.emit('start_game', data, room=room)
-    else:
-        sio.enter_room(sid, game_id)
-        sio.emit('start_game', data)
-
-
-# @ sio.event
-# def join(sid, message):
-#     print('\njoin', sid)
-#     current_game_state = []
-#     category = 'join_room'
-#     room_name = message['room_name']
-#     game_id = get_room_id(room_name)
-#     global game
-#     if not game:
-#         game = Game(game_id)
-#     if game_id != game.game_id:
-#         status = 'Wrong Room!'
-#     elif len(game.player_id) > 2:
-#         status = 'Room is full!'
-#     else:
-#         game.create_new_game(game_id, sid)
-#         status = 'Entered room ' + message['room_name']
-#         current_game_state = game.get_current_game_state()
-
-#     data = {'category': category,
-#             'status:': status, 'game_state': current_game_state}
-
-#     sio.enter_room(sid, message['room_name'])
-#     sio.emit('my_response', {'data': data},
-#              room=sid)
+    if err_msg:
+        sio.emit('start_game', {'status:': status,
+                                'err_msg': err_msg}, room=sid)
 
 
 @ sio.event
@@ -162,9 +137,17 @@ def move(sid, data):
         game = games[game_id]
         print('\ngame', game.player_id, game.turn)
         if sid in game.player_id and game.player_id[sid] == game.turn:
-            data = game.process_move(sid, move_index)
-            print('\n data', data)
-            sio.emit('move', data, room=game_id)
+            if game.process_move(sid, move_index):
+                for id, turn in game.player_id.items():
+                    if turn < 2:
+                        turn = 1 if game.turn == turn else 0
+                    data = {'move_index': move_index,
+                            'is_winner': game.winner,
+                            'winning_line': game.winning_line,
+                            'move_id': game.player_id[sid],
+                            'turn': turn}
+                    print('\n data', data, turn)
+                    sio.emit('move', data, room=id)
 
     # sio.emit('move', {'data': data}, room=message['room'])
 
@@ -220,3 +203,30 @@ def close_room(sid, message):
              {'data': 'Room ' + message['room'] + ' is closing.'},
              room=message['room'])
     sio.close_room(message['room'])
+
+
+# @ sio.event
+# def join(sid, message):
+#     print('\njoin', sid)
+#     current_game_state = []
+#     category = 'join_room'
+#     room_name = message['room_name']
+#     game_id = get_room_id(room_name)
+#     global game
+#     if not game:
+#         game = Game(game_id)
+#     if game_id != game.game_id:
+#         status = 'Wrong Room!'
+#     elif len(game.player_id) > 2:
+#         status = 'Room is full!'
+#     else:
+#         game.create_new_game(game_id, sid)
+#         status = 'Entered room ' + message['room_name']
+#         current_game_state = game.get_current_game_state()
+
+#     data = {'category': category,
+#             'status:': status, 'game_state': current_game_state}
+
+#     sio.enter_room(sid, message['room_name'])
+#     sio.emit('my_response', {'data': data},
+#              room=sid)

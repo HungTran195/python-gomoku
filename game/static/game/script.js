@@ -1,39 +1,39 @@
 'use strict';
-// let turn = true;
 const socket = io.connect();
 
+const allCells = document.querySelectorAll('.cell');
 const play_board = document.getElementById('play-board');
 const lobby = document.getElementById('lobby');
 
 // Get game id from server
-let game_id;
-let room_url = document.getElementById('room_url');
-if (room_url) {
-    room_url = room_url.textContent.split('/');
-    if (room_url.length > 3) {
-        game_id = room_url[room_url.length - 1].toString();
+function get_room_url() {
+    let room_url = document.getElementById('room_url');
+    let game_id, turn;
+    if (room_url) {
+        room_url = room_url.textContent.split('/');
+        if (room_url.length > 3) {
+            game_id = room_url[room_url.length - 1].toString();
+        }
+        else {
+            game_id = '';
+        }
     }
+    // In case joined by invited linked, use URL to get game id
     else {
-        game_id = '';
+        let current_page = window.location.href;
+        current_page = current_page.split('/');
+        if (current_page.length > 3) {
+            game_id = current_page[current_page.length - 1].toString();
+        }
     }
-    console.log(game_id);
-}
-// In case joined by invited linked, use URL to get game id
-else {
-    let current_page = window.location.href;
-    current_page = current_page.split('/');
-    if (current_page.length > 3) {
-        game_id = current_page[current_page.length - 1].toString();
-    }
-    console.log(game_id)
+    return game_id;
+};
 
-}
+// const game_id = get_room_url();
+const game_id = get_room_url();
 
 let move, move_index, isturn;
 let room_name = 'hello';
-
-
-const allCells = document.querySelectorAll('.cell');
 
 function start_game() {
     play_board.classList.remove('hidden');
@@ -41,36 +41,55 @@ function start_game() {
     socket.emit('start_game', game_id);
 }
 
+function draw_winning_line(line) {
+    console.log('winner');
+    line.forEach(element => {
+        document.getElementById(`${element}`).classList.add('winner');
+    });
+}
 
+// Handle received message from server to start game
 socket.on('start_game', function (data) {
-    console.log(data);
+    // Display error message if:
+    // Room is full or Wrong room id or Room is closed
     if (data.err_msg) {
         play_board.classList.add('hidden');
         document.querySelector('.error_msg').classList.remove('hidden');
         $('#error_msg').append(data.err_msg + '<br>');
     }
+    isturn = data.turn;
+
 });
 
+
+// Process received message from server to display move
+const updateMove = function (move_id, move_index) {
+    move = document.getElementById(move_index);
+    if (move) {
+        if (move_id) move.textContent = 'X';
+        else move.textContent = 'O';
+    }
+};
+// get message from server
 socket.on('move', function (data) {
-    // $('#log').append('<br>Received: ' + msg.data);
+    // $('#log').append('<br>Received: ' + msg.data); 
     if ('err_msg' in data) {
         document.querySelector('.error_msg').classList.remove('hidden');
         $('#error_msg').append(data.err_msg + '<br>');
     }
-    console.log(data);
-    updateMove(data.turn, data.move_index);
+    updateMove(data.move_id, data.move_index);
+    if (data.is_winner) {
+        isturn = 0;
+        draw_winning_line(data.winning_line);
+    };
+    isturn = data.turn;
+
 });
 
 
 
-const updateMove = function (turn, move_index) {
-    move = document.getElementById(move_index);
-    if (move) {
-        if (turn) move.textContent = 'X';
-        else move.textContent = 'O';
-    }
-};
-
+// This function is used for user to create room 
+// and will be update in the future
 const update_room = function (data) {
     if (data.status == 'success') {
         room_message.textContent = 'Room is created';
@@ -80,14 +99,13 @@ const update_room = function (data) {
     }
 }
 
-
+// Check every game cells to decide 'move' by turn
 for (const element of allCells) {
     element.addEventListener('click', () => {
-        if (!element.value) {
+        if (!element.textContent & isturn) {
             let box_id = element.id;
             socket.emit('move', { game_id: game_id, move_index: box_id });
         }
     });
-
 }
 

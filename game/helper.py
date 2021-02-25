@@ -18,7 +18,6 @@ def get_room_id(room_name):
 class Game:
     def __init__(self, game_id):
         self.game_id = game_id
-        self.turn = 0
         self.player_id = {}
         self.play_board = [[0 for _ in range(NUM_COL)] for _ in range(NUM_ROW)]
         self.winner = 0
@@ -28,25 +27,103 @@ class Game:
 
     def create_new_game(self, game_id, id):
         if not self.player_id:
-            self.player_id[id] = True
+            self.player_id[id] = 1
         else:
-            self.player_id[id] = False
+            self.player_id[id] = 0
         pass
 
     def process_move(self, sid, move_index):
         row, col = self.convert_index_to_2D(move_index)
-        self.play_board[row][col] = self.turn + 1
-        is_winner = self.is_winning_move(row, col)
+        winning_line = []
+        if self.play_board[row][col] == 0:
+            self.play_board[row][col] = self.turn + 1
+            if self.is_winning_move(row, col, self.turn+1):
+                for index in self.winning_line:
+                    winning_line.append(self.convert_index_to_1D(index))
+                self.winning_line = winning_line
+                print('win:', winning_line)
+                self.winner = 1
+                self.turn = 2
 
-        data = {'move_index': move_index,
-                'is_winner': is_winner, 'winning_line': [],
-                'turn': self.player_id[sid]}
-
-        self.turn = not(self.turn)
-        return data
-
-    def is_winning_move(self, row, col):
+            else:
+                self.turn = not(self.turn)
+            return True
         return False
+
+    def is_winning_move(self, x, y, target):
+        for direction in ['up_down', 'left_right', 'up_left', 'down_right']:
+            if self.count_connected(x, y, target, direction) == 5:
+                return True
+        return False
+
+    def count_connected(self, x, y, target, direction):
+        count = 1
+        stack = []
+        seen = set()
+        if direction == 'up_down':
+            stack.append((x, y))
+            seen.add((x, y))
+            while stack:
+                if y > 0 and self.play_board[x][y-1] == target and (x, y-1) not in seen:
+                    stack.append((x, y-1))
+                    seen.add((x, y-1))
+                    count += 1
+
+                if y + 1 < NUM_COL and self.play_board[x][y+1] == target and (x, y+1) not in seen:
+                    stack.append((x, y+1))
+                    seen.add((x, y+1))
+                    count += 1
+                x, y = stack.pop()
+
+        if direction == 'left_right':
+            stack.append((x, y))
+            seen.add((x, y))
+            while stack:
+                if x > 0 and self.play_board[x-1][y] == target and (x-1, y) not in seen:
+                    stack.append((x-1, y))
+                    seen.add((x-1, y))
+                    count += 1
+
+                if x + 1 < NUM_ROW and self.play_board[x+1][y] == target and (x+1, y) not in seen:
+                    stack.append((x+1, y))
+                    seen.add((x+1, y))
+                    count += 1
+                x, y = stack.pop()
+
+        if direction == 'up_left':
+            stack.append((x, y))
+            seen.add((x, y))
+            while stack:
+                if x + 1 < NUM_COL and y + 1 < NUM_ROW and self.play_board[x+1][y+1] == target and (x+1, y+1) not in seen:
+                    stack.append((x+1, y+1))
+                    seen.add((x+1, y+1))
+                    count += 1
+
+                if x > 0 and y > 0 and self.play_board[x-1][y-1] == target and (x-1, y-1) not in seen:
+                    stack.append((x-1, y-1))
+                    seen.add((x-1, y-1))
+                    count += 1
+                x, y = stack.pop()
+
+        if direction == 'down_right':
+            stack.append((x, y))
+            seen.add((x, y))
+            while stack:
+                if x > 0 and y + 1 < NUM_ROW and self.play_board[x-1][y+1] == target and (x-1, y+1) not in seen:
+                    stack.append((x-1, y+1))
+                    seen.add((x-1, y+1))
+                    count += 1
+
+                if x + 1 < NUM_COL and y > 0 and self.play_board[x+1][y-1] == target and (x+1, y-1) not in seen:
+                    stack.append((x+1, y-1))
+                    seen.add((x+1, y-1))
+                    count += 1
+                x, y = stack.pop()
+
+        if count == 5:
+            self.winning_line = list(seen)
+            return count
+        return None
 
     def get_current_game_state(self):
         current_game_state = []
