@@ -23,9 +23,5 @@ application = socketio.Middleware(
     sio, wsgi_app=django_app, socketio_path='socket.io')
 
 
+eventlet.wsgi.server(eventlet.listen(('.herokuapp.com', 8000)), application)
 eventlet.wsgi.server(eventlet.listen(('', 8000)), application)
-
-
-# os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'daily_news.settings')
-
-# application = get_wsgi_application()
