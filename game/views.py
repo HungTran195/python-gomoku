@@ -6,12 +6,13 @@ from django.http import HttpResponseNotFound
 from urllib.parse import urljoin
 from .helper import Game, generate_game_id
 import re
+import os
 
 # Create your views here.
 
 NUM_ROW = 20
 NUM_COL = 20
-HOST = 'http://127.0.0.1:8000/'
+HOST = os.environ.get('HOST_URL')
 turn = 1
 board = [[0 for _ in range(NUM_COL)] for _ in range(NUM_ROW)]
 
