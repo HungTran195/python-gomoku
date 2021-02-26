@@ -16,7 +16,7 @@ from django.contrib.staticfiles.handlers import StaticFilesHandler
 
 from game.views import sio
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "django_example.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "caro_game.settings")
 
 django_app = get_wsgi_application()
 application = socketio.Middleware(
