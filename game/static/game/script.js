@@ -3,7 +3,12 @@ const socket = io.connect();
 
 const allCells = document.querySelectorAll('.cell');
 const play_board = document.getElementById('play-board');
-const lobby = document.getElementById('lobby');
+const float_box = document.querySelector('.float-box');
+const overlay = document.querySelector('.overlay');
+const loader = document.querySelector('.loader');
+const btn_start = document.querySelector('.btn-start');
+
+let move_index, isturn;
 
 // Get game id from server
 function get_room_url() {
@@ -29,23 +34,13 @@ function get_room_url() {
     return game_id;
 };
 
-// const game_id = get_room_url();
 const game_id = get_room_url();
 
-let move, move_index, isturn;
-let room_name = 'hello';
-
+// Send message to server and wait for other player join game
 function start_game() {
-    play_board.classList.remove('hidden');
-    lobby.classList.add('hidden');
+    btn_start.classList.toggle('hidden');
+    loader.classList.toggle('hidden');
     socket.emit('start_game', game_id);
-}
-
-function draw_winning_line(line) {
-    console.log('winner');
-    line.forEach(element => {
-        document.getElementById(`${element}`).classList.add('winner');
-    });
 }
 
 // Handle received message from server to start game
@@ -58,13 +53,21 @@ socket.on('start_game', function (data) {
         $('#error_msg').append(data.err_msg + '<br>');
     }
     isturn = data.turn;
-
+    overlay.classList.toggle('hidden');
+    float_box.classList.toggle('hidden');
 });
 
+// Change color of winning nodes
+function draw_winning_line(line) {
+    console.log('winner');
+    line.forEach(element => {
+        document.getElementById(`${element}`).classList.add('winner');
+    });
+}
 
 // Process received message from server to display move
 const updateMove = function (move_id, move_index) {
-    move = document.getElementById(move_index);
+    let move = document.getElementById(move_index);
     if (move) {
         if (move_id) move.textContent = 'X';
         else move.textContent = 'O';
@@ -86,6 +89,13 @@ socket.on('move', function (data) {
 
 });
 
+// If one player left game, stop game
+socket.on('end_game', function (data) {
+    isturn = data.turn;
+    document.querySelector('.error_msg').classList.remove('hidden');
+    $('#msg').append(data.msg + '<br>');
+    overlay.classList.toggle('hidden');
+})
 
 
 // This function is used for user to create room 
@@ -108,4 +118,5 @@ for (const element of allCells) {
         }
     });
 }
+
 

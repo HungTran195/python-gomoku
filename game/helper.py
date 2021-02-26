@@ -22,7 +22,6 @@ class Game:
         self.play_board = [[0 for _ in range(NUM_COL)] for _ in range(NUM_ROW)]
         self.winner = 0
         self.winning_line = []
-        # self.current_player = 0
         self.turn = 1
 
     def create_new_game(self, game_id, id):
@@ -41,7 +40,6 @@ class Game:
                 for index in self.winning_line:
                     winning_line.append(self.convert_index_to_1D(index))
                 self.winning_line = winning_line
-                print('win:', winning_line)
                 self.winner = 1
                 self.turn = 2
 
@@ -140,3 +138,7 @@ class Game:
 
     def convert_index_to_1D(self, index):
         return index[0] * NUM_COL + index[1]
+
+    def close_game(self):
+        self.turn = 2
+        return

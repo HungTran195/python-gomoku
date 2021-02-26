@@ -27,32 +27,35 @@
     </header>
     <main>
         <div class="lobby" id="lobby">
-            {% if is_start_page %}
-            <div class="start-page ">
-                <p>This is the your room: <a id="room_url" href="{{room_url}}">{{room_url}}</a> </p>
-                <p>Please share it to your friend and start playing</p>
+            <div class="float-box">
+                {% if is_start_page %}
+                <div class="start-page">
+                    <p>This is your room: <a id="room_url" href="{{room_url}}">{{room_url}}</a> </p>
+                    <p>Please share it to your friend and start playing</p>
+                </div>
+                {% else %}
+                <div class="confirm-box">
+                    <p>You are about to play with {{player_name}}</p>
+                </div>
+                {% endif %}
+                <div>
+                    <button class="btn btn-start" onclick="start_game()">Let's go!</button>
+                    <div class="loader hidden">
+                        <p> Waiting for your friend</p>
+                        <div class="spinning"></div>
+                    </div>
+                </div>
             </div>
-            {% else %}
-            <div class="confirm-box">
-                <p>You are about to play with {{player_name}}</p>
+            <div class="overlay"></div>
+            <div class="error_msg float-box hidden">
+                <p id="msg"></p>
             </div>
-            {% endif %}
-
-            <button class="btn confirm-btn" onclick="start_game()">Let's go</button>
+            <div class="play-board" id="play-board">
+                {% for index, value in play_board_1D_array.items %}
+                <div class="cell" id="{{index}}">{{value}}</div>
+                {%endfor%}
+            </div>
         </div>
-
-        <div class="error_msg hidden">
-            <p id="error_msg"></p>
-        </div>
-
-        <div class="play-board hidden" id="play-board">
-            {% for index, value in play_board_1D_array.items %}
-            <div class="cell" id="{{index}}">{{value}}</div>
-            {%endfor%}
-        </div>
-
-
-
     </main>
 
     <script src="{% static 'game/script.js' %}"></script>
