@@ -18,9 +18,14 @@ from game.views import sio
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "django_example.settings")
 
-django_app = StaticFilesHandler(get_wsgi_application())
+django_app = get_wsgi_application()
 application = socketio.Middleware(
     sio, wsgi_app=django_app, socketio_path='socket.io')
 
 
 eventlet.wsgi.server(eventlet.listen(('', 8000)), application)
+
+
+# os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'daily_news.settings')
+
+# application = get_wsgi_application()
