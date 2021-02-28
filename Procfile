@@ -1,1 +1,1 @@
-web: gunicorn caro_game.wsgi
+web: gunicorn -k eventlet -w 1  caro_game.wsgi:application
