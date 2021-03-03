@@ -37,6 +37,7 @@ const get_room_url = function () {
 
 const game_id = get_room_url();
 
+
 // Send message to server and wait for other player join game
 const start_game = function () {
     btn_start.classList.toggle('hidden');
@@ -120,6 +121,7 @@ const update_room = function (data) {
     }
 }
 
+
 // Check every game cells to decide 'move' by turn
 for (const element of allCells) {
     element.addEventListener('click', () => {
@@ -131,3 +133,7 @@ for (const element of allCells) {
 }
 
 
+//  TESITING
+// overlay.classList.add('hidden');
+// starting_box.classList.add('hidden');
+// board.classList.remove('hidden');

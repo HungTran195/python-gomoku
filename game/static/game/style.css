@@ -203,6 +203,9 @@ p {
     width: 100%;
 }
 
+.play-board .cell:hover {
+    background-color: #ffebbe;
+}
 
 .chat-field {
     max-width: 300px;
@@ -214,8 +217,6 @@ p {
     font-weight: 400;
     z-index: 10;
 }
-
-
 
 
 .hidden {
@@ -241,8 +242,8 @@ p {
 
 .winner{
     color: #e30000;
-    background-color: #6fd06f;
-
+    background-color: #6fd06f !important;
+    border: #459d45 0.5px solid !important;
 }
 
 .loader .spinning {

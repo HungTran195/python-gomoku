@@ -14,15 +14,16 @@ import socketio
 
 from game.views import sio
 
-# from django.contrib.staticfiles.handlers import StaticFilesHandler
-import eventlet
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "caro_game.settings")
 
 django_app = get_wsgi_application()
 application = socketio.WSGIApp(sio, django_app)
-# django_app = StaticFilesHandler(get_wsgi_application())
-# application = socketio.Middleware(
-#     sio, wsgi_app=django_app, socketio_path='socket.io')
 
+
+"""
+These lines of code is used to enable eventlet module on port 8000
+and only used for local developement
+"""
+# import eventlet
 # eventlet.wsgi.server(eventlet.listen(('', 8000)), application)
