@@ -25,35 +25,62 @@
             </a>
         </nav>
     </header>
-    <main>
-        <div class="lobby" id="lobby">
-            <div class="float-box">
-                {% if is_start_page %}
-                <div class="start-page">
-                    <p>This is your room: <a id="room_url" href="{{room_url}}">{{room_url}}</a> </p>
-                    <p>Please share it to your friend and start playing</p>
+    <main id="main">
+        <div class="overlay"></div>
+        <div class="game-field">
+            <div class="lobby" id="lobby">
+                <div class="hidden background-img">
+                    <img src="{% static 'game/images/background.png' %}" alt="NOENOENOENOE">
                 </div>
-                {% else %}
-                <div class="confirm-box">
-                    <p>You are about to play with {{player_name}}</p>
-                </div>
-                {% endif %}
-                <div>
-                    <button class="btn btn-start" onclick="start_game()">Let's go!</button>
-                    <div class="loader hidden">
-                        <p> Waiting for your friend</p>
-                        <div class="spinning"></div>
+                <div class="float-box" id="starting-box">
+                    {% if is_start_page %}
+                    <div class="start-page">
+                        <p>This is your room: <a id="room_url" href="{{room_url}}">{{room_url}}</a> </p>
+                        <p>Please share it to your friend and start playing</p>
+                    </div>
+                    {% else %}
+                    <div class="confirm-box">
+                        <p>You are about to play with {{player_name}}</p>
+                    </div>
+                    {% endif %}
+                    <div>
+                        <button class="btn btn-start" onclick="start_game()">Let's go!</button>
+                        <div class="loader hidden">
+                            <p> Waiting for your friend</p>
+                            <div class="spinning"></div>
+                        </div>
                     </div>
                 </div>
+                <div class="hidden error_msg float-box">
+                    <p id="msg"></p>
+                </div>
             </div>
-            <div class="overlay"></div>
-            <div class="error_msg float-box hidden">
-                <p id="msg"></p>
+
+            <div class="board" id="board">
+                <div class="game-score">
+                    <p id="player1-name"></p>
+                    <p id="score"></p>
+                    <p id="player2-name"></p>
+                </div>
+                <div class="turn">
+                    <div class="turn-sign" id="turn-sign"></div>
+                    <p>Your Turn</p>
+                </div>
+                <div class="play-board" id="play-board">
+                    <div class="hidden player-win">You win!</div>
+                    <div class="hidden player-lose">You lose!</div>
+                    {% for index, value in play_board_1D_array.items %}
+                    <div class="cell" id="{{index}}">{{value}}</div>
+                    {%endfor%}
+                </div>
             </div>
-            <div class="play-board" id="play-board">
-                {% for index, value in play_board_1D_array.items %}
-                <div class="cell" id="{{index}}">{{value}}</div>
-                {%endfor%}
+
+        </div>
+        <div class="chat-field hidden" id="chat-field">
+            <div>
+                <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Saepe, iusto, veritatis praesentium vitae
+                    sed ipsam suscipit molestiae aspernatur aliquam odit necessitatibus ipsa cupiditate. Ratione fugit
+                    quidem, ducimus nam natus dicta.</p>
             </div>
         </div>
     </main>

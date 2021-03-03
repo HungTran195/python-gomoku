@@ -1,6 +1,6 @@
 from random import random
 
-NUM_ROW = 20
+NUM_ROW = 18
 NUM_COL = 20
 
 id = 0

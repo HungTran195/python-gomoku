@@ -1,5 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap');
 
+:root{
+    --num-col: 18;
+    --num-row: 20;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -8,7 +13,7 @@
 
 body {
     font-family:  'Roboto', sans-serif;
-    background: #fff;
+    background-color: #f5f5f5;
     color: #333;
     line-height: 1.6;
 }
@@ -50,23 +55,11 @@ p {
     max-width: 40px;
 }
 
-.lobby {
-    display: flex;
+#main {
     position: relative;
-    flex-direction: column;
-    align-items: center;
+    display: flex;
     justify-content: center;
-    text-align: center;
-    height: 95vh;
-}
-.float-box {
-    padding: 30px;
-    background: #2c3e50;
-    color: #fff;
-    border-radius: 10px;
-    font-size: 1.4rem;
-    font-weight: 500;
-    z-index: 10;
+    align-items: center;
 }
 
 .overlay {
@@ -74,11 +67,50 @@ p {
     top: 0;
     left: 0;
     width: 100%;
-    height: 100%;
+    height: calc( 100vh - 60px );
     background-color: rgba(154, 154, 154, 0.6);
     backdrop-filter: blur(2px);
     z-index: 2;
 }
+
+.game-field {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.lobby {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    height: calc( 100vh - 60px );
+}
+
+.lobby .background-img img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    
+}
+
+.lobby .float-box {
+    /* position: absolute; */
+    background: #2c3e50;
+    color: #fff;
+    font-size: 1.4rem;
+    font-weight: 500;
+    border-radius: 10px;
+    padding: 30px;
+    z-index: 10;
+    
+}
+
+
 
 .float-box .start-page a {
     color: #77f077;
@@ -88,36 +120,103 @@ p {
 }
 
 .error_msg.float-box{
-    position: absolute;
-
+    /* position: absolute; */
     color: #ff7878;
+    max-width: 600px;
     z-index: 20;
 }
 
-.lobby .play-board {
-    position: absolute;
-    height: calc(20*35px);
-    width: calc(20*35px);
-    background-color: #FFD57E;
-    /* border: #E8BF84	30px solid; */
-    margin: 20px auto;
-    display: grid;
-    border: black 1px solid;
-    grid-template-columns: repeat(20, 35px);
-    grid-template-rows: repeat(20, 35px);
+.board {
+    /* position: absolute; */
+    top: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    /* align-items: center; */
 }
 
-.lobby .play-board .cell {
+.board .game-score {
     display: inline-flex;
-    border: black 1px solid;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Roboto';
+    font-size: 1.7rem;
+    font-weight: 500;
+    color: cadetblue;
+}
+
+.board .game-score p:first-child{
+    margin-right: 30px;
+}
+
+.board .game-score p:last-child{
+    margin-left: 30px;
+}
+
+.board .game-score p:nth-child(1){
+    margin: 0 30px;
+}
+
+.board .turn {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    text-align: center;
+}
+
+
+.board .turn .turn-sign{
+    width: 30px;
+    height: 30px;
+    /* border: 8px; */
+    border-radius: 50%;
+    background-color:#9a9a9a;
+    background-color:#77f077;
+    margin-right: 10px;
+}
+
+.board .turn .turn-sign > p {
+    margin: 0;
+}
+
+.play-board {
+    /* position:  absolute; */
+    height: calc(var(--num-row) *35px + 1px);
+    width: calc(var(--num-col)*35px +1px );
+    background-color: #FFD57E;
+    display: grid;
+    border: #77f077 1.2px solid;
+    grid-template-columns: repeat(var(--num-col), 35px);
+    grid-template-rows: repeat(var(--num-row), 35px);
+}
+
+.play-board .cell {
+    display: inline-flex;
+    border:#626262  1px solid;
     text-align: center;
     align-items: center;
     justify-content: center;
-    font-size: 2rem;
-    font-weight: 600;
+    font-size: 1.7rem;
+    font-weight: 500;
     height: 100%;
     width: 100%;
 }
+
+
+.chat-field {
+    max-width: 300px;
+}
+
+.player-win, .player-lose {
+    position: absolute;
+    font-size: 1.5rem;
+    font-weight: 400;
+    z-index: 10;
+}
+
+
+
 
 .hidden {
     display: none;
@@ -141,7 +240,9 @@ p {
 }
 
 .winner{
-    color: blue;
+    color: #e30000;
+    background-color: #6fd06f;
+
 }
 
 .loader .spinning {

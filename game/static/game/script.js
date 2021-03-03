@@ -2,16 +2,17 @@
 const socket = io.connect();
 
 const allCells = document.querySelectorAll('.cell');
-const play_board = document.getElementById('play-board');
-const float_box = document.querySelector('.float-box');
 const overlay = document.querySelector('.overlay');
+const lobby = document.querySelector('.lobby');
+const starting_box = document.getElementById('starting-box');
 const loader = document.querySelector('.loader');
 const btn_start = document.querySelector('.btn-start');
-
+const board = document.getElementById('board');
+const turn_sign = document.getElementById('turn-sign');
 let move_index, isturn;
 
 // Get game id from server
-function get_room_url() {
+const get_room_url = function () {
     let room_url = document.getElementById('room_url');
     let game_id, turn;
     if (room_url) {
@@ -37,7 +38,7 @@ function get_room_url() {
 const game_id = get_room_url();
 
 // Send message to server and wait for other player join game
-function start_game() {
+const start_game = function () {
     btn_start.classList.toggle('hidden');
     loader.classList.toggle('hidden');
     socket.emit('start_game', game_id);
@@ -48,20 +49,28 @@ socket.on('start_game', function (data) {
     // Display error message if:
     // Room is full or Wrong room id or Room is closed
     if (data.err_msg) {
-        play_board.classList.add('hidden');
+        board.classList.add('hidden');
         document.querySelector('.error_msg').classList.remove('hidden');
         $('#error_msg').append(data.err_msg + '<br>');
     }
     isturn = data.turn;
-    overlay.classList.toggle('hidden');
-    float_box.classList.toggle('hidden');
+
+    if (isturn) turn_sign.style.backgroundColor = '#77f077';
+    else turn_sign.style.backgroundColor = '#9a9a9a';
+
+    overlay.classList.add('hidden');
+    starting_box.classList.add('hidden');
+    board.classList.remove('hidden');
 });
 
 // Change color of winning nodes
-function draw_winning_line(line) {
+const draw_winning_line = function (line, iswinner) {
     console.log('winner');
+
+    document.querySelector('.player-win').classList.remove()
     line.forEach(element => {
         document.getElementById(`${element}`).classList.add('winner');
+
     });
 }
 
@@ -83,9 +92,11 @@ socket.on('move', function (data) {
     updateMove(data.move_id, data.move_index);
     if (data.is_winner) {
         isturn = 0;
-        draw_winning_line(data.winning_line);
+        draw_winning_line(data.winning_line, 0);
     };
     isturn = data.turn;
+    if (isturn) turn_sign.style.backgroundColor = '#77f077';
+    else turn_sign.style.backgroundColor = '#9a9a9a';
 
 });
 

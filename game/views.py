@@ -10,9 +10,9 @@ import os
 
 # Create your views here.
 
+NUM_COL = 18
 NUM_ROW = 20
-NUM_COL = 20
-HOST = os.environ.get('HOST_URL')
+HOST = os.environ.get('HOST_URL', 'http://127.0.0.1:8000/')
 turn = 1
 board = [[0 for _ in range(NUM_COL)] for _ in range(NUM_ROW)]
 
