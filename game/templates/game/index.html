@@ -30,12 +30,13 @@
         <div class="game-field">
             <div class="lobby" id="lobby">
                 <div class="hidden background-img">
-                    <img src="{% static 'game/images/background.png' %}" alt="NOENOENOENOE">
+                    <img src="" alt="">
                 </div>
                 <div class="float-box" id="starting-box">
                     {% if is_start_page %}
                     <div class="start-page">
-                        <p>This is your room: <a id="room_url" href="{{room_url}}">{{room_url}}</a> </p>
+                        <p>This is your room:</p>
+                        <p><a id="room_url" href="{{room_url}}">{{room_url}}</a> </p>
                         <p>Please share it to your friend and start playing</p>
                     </div>
                     {% else %}

@@ -14,8 +14,8 @@ import socketio
 
 from game.views import sio
 
-from django.contrib.staticfiles.handlers import StaticFilesHandler
-# import eventlet
+# from django.contrib.staticfiles.handlers import StaticFilesHandler
+import eventlet
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "caro_game.settings")
 
