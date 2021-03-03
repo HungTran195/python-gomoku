@@ -68,8 +68,12 @@
                     <p>Your Turn</p>
                 </div>
                 <div class="play-board" id="play-board">
-                    <div class="hidden player-win">You win!</div>
-                    <div class="hidden player-lose">You lose!</div>
+                    <div class="hidden winner-banner">
+                        <p>You win!</p>
+                    </div>
+                    <div class="hidden loser-banner">
+                        <p>You lose!</p>
+                    </div>
                     {% for index, value in play_board_1D_array.items %}
                     <div class="cell" id="{{index}}">{{value}}</div>
                     {%endfor%}
@@ -81,8 +85,9 @@
             <div>
                 <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Saepe, iusto, veritatis praesentium vitae
                     sed ipsam suscipit molestiae aspernatur aliquam odit necessitatibus ipsa cupiditate. Ratione fugit
-                    quidem, ducimus nam natus dicta.</p>
+                    quidem, ducimus nam natus dicta.
             </div>
+            </p>
         </div>
     </main>
 

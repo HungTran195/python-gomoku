@@ -116,7 +116,7 @@ def start_game(sid, game_id):
 @ sio.event
 def move(sid, data):
     game_id, move_index = int(data['game_id']), int(data['move_index'])
-
+    is_winner = 0
     if not games.get(game_id):
         err_msg = 'Something went wrong'
         sio.emit('move', err_msg, room=game_id)
@@ -127,8 +127,13 @@ def move(sid, data):
                 for id, turn in game.player_id.items():
                     if turn < 2:
                         turn = 1 if game.turn == turn else 0
+                    if game.winning_line is not None:
+                        if id == game.winner:
+                            is_winner = 1
+                        else:
+                            is_winner = 0
                     data = {'move_index': move_index,
-                            'is_winner': game.winner,
+                            'is_winner': is_winner,
                             'winning_line': game.winning_line,
                             'move_id': game.player_id[sid],
                             'turn': turn}

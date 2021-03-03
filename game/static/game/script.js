@@ -65,13 +65,12 @@ socket.on('start_game', function (data) {
 });
 
 // Change color of winning nodes
-const draw_winning_line = function (line, iswinner) {
+const draw_winning_line = function (line, is_winner) {
     console.log('winner');
-
-    document.querySelector('.player-win').classList.remove()
+    if (is_winner) document.querySelector('.winner-banner').classList.remove('hidden');
+    else document.querySelector('.loser-banner').classList.remove('hidden');
     line.forEach(element => {
-        document.getElementById(`${element}`).classList.add('winner');
-
+        document.getElementById(`${element}`).classList.add('winner-nodes');
     });
 }
 
@@ -91,9 +90,9 @@ socket.on('move', function (data) {
         $('#error_msg').append(data.err_msg + '<br>');
     }
     updateMove(data.move_id, data.move_index);
-    if (data.is_winner) {
+    if (data.winning_line.length !== 0) {
         isturn = 0;
-        draw_winning_line(data.winning_line, 0);
+        draw_winning_line(data.winning_line, data.is_winner);
     };
     isturn = data.turn;
     if (isturn) turn_sign.style.backgroundColor = '#77f077';

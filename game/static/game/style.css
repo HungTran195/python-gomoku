@@ -211,12 +211,36 @@ p {
     max-width: 300px;
 }
 
-.player-win, .player-lose {
+.winner-banner, .loser-banner {
     position: absolute;
     font-size: 1.5rem;
     font-weight: 400;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    width: 100%;
     z-index: 10;
+    animation: float-in 0.5s linear;
 }
+
+@keyframes float-in {
+    0% {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.winner-banner p, .loser-banner p {
+    background-color: #f5f5dc;
+    width: 120px;
+    border-radius: 8px;
+}
+
 
 
 .hidden {
@@ -240,11 +264,14 @@ p {
     
 }
 
-.winner{
+.winner-nodes{
     color: #e30000;
     background-color: #6fd06f !important;
     border: #459d45 0.5px solid !important;
 }
+
+
+
 
 .loader .spinning {
     border: 8px solid #f3f3f3;

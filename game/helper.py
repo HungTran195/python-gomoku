@@ -40,7 +40,7 @@ class Game:
                 for index in self.winning_line:
                     winning_line.append(self.convert_index_to_1D(index))
                 self.winning_line = winning_line
-                self.winner = 1
+                self.winner = sid
                 self.turn = 2
 
             else:
