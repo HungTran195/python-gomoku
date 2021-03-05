@@ -19,17 +19,18 @@ class Game:
     def __init__(self, game_id):
         self.game_id = game_id
         self.player_id = {}
+        self.player_name = {}
         self.play_board = [[0 for _ in range(NUM_COL)] for _ in range(NUM_ROW)]
         self.winner = 0
         self.winning_line = []
         self.turn = 1
 
-    def create_new_game(self, game_id, id):
+    def create_new_game(self, game_id, id, player_name):
         if not self.player_id:
             self.player_id[id] = 1
         else:
             self.player_id[id] = 0
-        pass
+        self.player_name[id] = player_name
 
     def process_move(self, sid, move_index):
         row, col = self.convert_index_to_2D(move_index)

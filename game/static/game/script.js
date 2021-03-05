@@ -1,15 +1,16 @@
 'use strict';
 const socket = io.connect();
 
+const lobby = document.querySelector('.lobby');
+const board = document.getElementById('board');
+
 const allCells = document.querySelectorAll('.cell');
 const overlay = document.querySelector('.overlay');
-const lobby = document.querySelector('.lobby');
 const starting_box = document.getElementById('starting-box');
 const loader = document.querySelector('.loader');
 const btn_start = document.querySelector('.btn-start');
-const board = document.getElementById('board');
 const turn_sign = document.getElementById('turn-sign');
-let move_index, isturn;
+let move_index, isturn, player_name = '', mode;
 
 // Get game id from server
 const get_room_url = function () {
@@ -19,6 +20,7 @@ const get_room_url = function () {
         room_url = room_url.textContent.split('/');
         if (room_url.length > 3) {
             game_id = room_url[room_url.length - 1].toString();
+            mode = 'host';
         }
         else {
             game_id = '';
@@ -30,28 +32,44 @@ const get_room_url = function () {
         current_page = current_page.split('/');
         if (current_page.length > 3) {
             game_id = current_page[current_page.length - 1].toString();
+            mode = 'guest';
+
         }
     }
     return game_id;
 };
-
 const game_id = get_room_url();
 
 
-// Send message to server and wait for other player join game
+// Get typed name 
+// Send game infor to server and wait for other player to join game
 const start_game = function () {
-    btn_start.classList.toggle('hidden');
-    loader.classList.toggle('hidden');
-    socket.emit('start_game', game_id);
+    player_name = document.getElementById("get-name-box").value;
+    if (player_name) {
+        if (mode === 'host') {
+            let msg = document.getElementById("welcome-msg").textContent;
+            msg = msg + player_name + ',';
+            document.getElementById("welcome-msg").textContent = msg
+            document.querySelector('.new-game-box').classList.remove('hidden');
+        }
+        document.getElementById('name-box').classList.add('hidden');
+        socket.emit('start_game', { game_id: game_id, player_name: player_name });
+    }
 }
+// Incase user hit "Enter" key
+// Call start_game function and continue
+document.getElementById('get-name-box').addEventListener('keydown', (e) => {
+    if (e.key == 'Enter') {
+        get_name();
+    }
+})
 
 // Handle received message from server to start game
 socket.on('start_game', function (data) {
     // Display error message if:
     // Room is full or Wrong room id or Room is closed
     if (data.err_msg) {
-        board.classList.add('hidden');
-        document.querySelector('.error_msg').classList.remove('hidden');
+        document.querySelector('.error').classList.remove('hidden');
         $('#error_msg').append(data.err_msg + '<br>');
     }
     isturn = data.turn;
@@ -61,7 +79,6 @@ socket.on('start_game', function (data) {
 
     overlay.classList.add('hidden');
     starting_box.classList.add('hidden');
-    board.classList.remove('hidden');
 });
 
 // Change color of winning nodes
@@ -86,7 +103,7 @@ const updateMove = function (move_id, move_index) {
 socket.on('move', function (data) {
     // $('#log').append('<br>Received: ' + msg.data); 
     if ('err_msg' in data) {
-        document.querySelector('.error_msg').classList.remove('hidden');
+        document.querySelector('.error').classList.remove('hidden');
         $('#error_msg').append(data.err_msg + '<br>');
     }
     updateMove(data.move_id, data.move_index);
@@ -103,10 +120,11 @@ socket.on('move', function (data) {
 // If one player left game, stop game
 socket.on('end_game', function (data) {
     isturn = data.turn;
-    document.querySelector('.error_msg').classList.remove('hidden');
-    $('#msg').append(data.msg + '<br>');
+    document.querySelector('.error').classList.remove('hidden');
+    $('#error_msg').append(data.msg + '<br>');
     overlay.classList.toggle('hidden');
 })
+
 
 
 // This function is used for user to create room 
@@ -135,4 +153,3 @@ for (const element of allCells) {
 //  TESITING
 // overlay.classList.add('hidden');
 // starting_box.classList.add('hidden');
-// board.classList.remove('hidden');

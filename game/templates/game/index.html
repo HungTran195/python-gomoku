@@ -33,27 +33,38 @@
                     <img src="" alt="">
                 </div>
                 <div class="float-box" id="starting-box">
-                    {% if is_start_page %}
-                    <div class="start-page">
-                        <p>This is your room:</p>
-                        <p><a id="room_url" href="{{room_url}}">{{room_url}}</a> </p>
-                        <p>Please share it to your friend and start playing</p>
+                    <div class="name-box" id="name-box">
+                        {% if not is_start_page %}
+                        <div>
+                            <p>You are about to play with <em> {{player_name}} </em></p>
+                        </div>
+                        {% endif %}
+                        <input type="text" name="name" id="get-name-box" placeholder="Your Name">
+                        <button class="btn btn-light btn-start" onclick="start_game()">Start Game</button>
                     </div>
-                    {% else %}
-                    <div class="confirm-box">
-                        <p>You are about to play with {{player_name}}</p>
-                    </div>
-                    {% endif %}
-                    <div>
-                        <button class="btn btn-start" onclick="start_game()">Let's go!</button>
-                        <div class="loader hidden">
-                            <p> Waiting for your friend</p>
-                            <div class="spinning"></div>
+                    <div class="new-game-box hidden ">
+                        {% if is_start_page %}
+                        <div>
+                            <p id="welcome-msg">Hello </p>
+                            <p>Here is your room, just share it to your friend!</p>
+                            <p><a id="room_url" href="{{room_url}}">{{room_url}}</a> </p>
+                        </div>
+                        {% endif %}
+                        <div>
+                            <p> Waiting for your friend...</p>
+                            <div class="loader">
+                                <div class=" spinning"></div>
+                            </div>
                         </div>
                     </div>
+
+
                 </div>
-                <div class="hidden error_msg float-box">
-                    <p id="msg"></p>
+                <div class="hidden error float-box">
+                    <p id="error_msg"></p>
+                    <div>
+                        <a class="btn btn-light btn-start" href="{{host}}">New Game</a>
+                    </div>
                 </div>
             </div>
 

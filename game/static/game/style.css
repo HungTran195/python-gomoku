@@ -87,7 +87,6 @@ p {
     align-items: center;
     justify-content: center;
     text-align: center;
-    height: calc( 100vh - 60px );
 }
 
 .lobby .background-img img {
@@ -96,6 +95,15 @@ p {
     left: 0;
     width: 100%;
     
+}
+
+#get-name-box {
+    padding: 10px;
+    background-color: #ffebbe;
+    border-radius: 8px;
+    font-size: 1.4rem;
+    color: #ec0000;
+    margin: 10px 5px 20px;
 }
 
 .lobby .float-box {
@@ -112,14 +120,14 @@ p {
 
 
 
-.float-box .start-page a {
+.float-box .new-game-box a {
     color: #77f077;
 }
-.float-box .start-page a:hover {
+.float-box .new-game-box a:hover {
     color: #6fd06f;
 }
 
-.error_msg.float-box{
+.error.float-box{
     /* position: absolute; */
     color: #ff7878;
     max-width: 600px;
@@ -169,10 +177,8 @@ p {
 .board .turn .turn-sign{
     width: 30px;
     height: 30px;
-    /* border: 8px; */
     border-radius: 50%;
     background-color:#9a9a9a;
-    background-color:#77f077;
     margin-right: 10px;
 }
 
@@ -249,19 +255,24 @@ p {
 
 
 .btn {
+    font-size: 1.3rem;
     padding: 10px 15px;
     border-radius: 8px;
     border: 1px;
 }
 
-.btn-start {
+.btn-light {
     background: #6fd06f;
-    font-size: 1.4rem;
     color: #fff;
 }
-.btn-start:hover{
+
+.btn-light:hover{
     background-color: #77f077;
-    
+}
+
+
+.btn-start {   
+    font-size: 1.4rem;
 }
 
 .winner-nodes{
@@ -271,14 +282,19 @@ p {
 }
 
 
-
+.loader {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
 
 .loader .spinning {
     border: 8px solid #f3f3f3;
     border-top: 8px solid #3498db;
     border-radius: 50%;
-    width: 50px;
-    height: 50px;
+    width: 40px;
+    height: 40px;
     animation: spin 2s linear infinite;
     margin: auto;
 }
@@ -287,3 +303,12 @@ p {
 0% { transform: rotate(0deg); }
 100% { transform: rotate(360deg); }
 }
+
+
+@media(max-height: 825px) {
+    .overlay{
+        height: 100%;
+    }        
+
+}
+

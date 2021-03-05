@@ -56,6 +56,7 @@ def index(request):
     context = {'play_board_1D_array': play_board_1D_array,
                'turn': turn,
                'room_url': url,
+               'host': HOST,
                'is_start_page': True}
 
     return HttpResponse(render(request, 'game/index.html', context))
@@ -68,10 +69,13 @@ def invited_game(request, game_id):
         return HttpResponseNotFound('<h1>Page not found! Check your link</h1>')
 
     game = games[int(game_id)]
-    player_name = 'Tony'
+
+    for _, name in game.player_name.items():
+        player_name = name
 
     context = {'play_board_1D_array': play_board_1D_array,
                'turn': turn,
+               'host': HOST,
                'player_name': player_name,
                'is_start_page': False}
 
@@ -79,11 +83,13 @@ def invited_game(request, game_id):
 
 
 @ sio.event
-def start_game(sid, game_id):
+def start_game(sid, data):
     global games
     err_msg = ''
+    game_id = data['game_id']
     game_id = int(re.sub("[^0-9]+", " ", game_id))
-    data = None
+    player_name = data['player_name']
+    send_data = None
     if not game_id:
         status = 'failed'
         err_msg = 'There is something wrong, please reload page!'
@@ -99,14 +105,15 @@ def start_game(sid, game_id):
         if len(game.player_id) > 1:
             err_msg = 'Room is full!'
         else:
-            game.create_new_game(game_id, sid)
+            game.create_new_game(game_id, sid, player_name)
             sio.enter_room(sid, game_id)
 
             if len(game.player_id) == 2:
                 for id, turn in game.player_id.items():
-                    data = {'status:': status,
-                            'turn': turn}
-                    sio.emit('start_game', data, room=id)
+                    send_data = {'status:': status,
+                                 'turn': turn
+                                 }
+                    sio.emit('start_game', send_data, room=id)
 
     if err_msg:
         sio.emit('start_game', {'status:': status,
