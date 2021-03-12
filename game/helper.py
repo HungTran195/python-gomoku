@@ -155,7 +155,3 @@ class Game:
 
     def convert_index_to_1D(self, index):
         return index[0] * NUM_COL + index[1]
-
-    def close_game(self):
-        self.turn = 2
-        return

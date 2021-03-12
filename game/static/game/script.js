@@ -27,8 +27,8 @@ const init = function (mode = '') {
     document.querySelector('.loser-banner').classList.add('hidden');
     document.getElementById('replay-container').classList.add('hidden');
 }
-
 init('start_game');
+
 // Get game id from server
 const get_room_url = function () {
     let room_url = document.getElementById('room_url');
@@ -138,6 +138,7 @@ const updateMove = function (move_id, move_index) {
         else move.textContent = 'O';
     }
 };
+
 // get message from server
 socket.on('move', function (data) {
     // $('#log').append('<br>Received: ' + msg.data); 
@@ -157,7 +158,6 @@ socket.on('move', function (data) {
 });
 
 /* Socket listen on "end_game" from server, if one player left game*/
-
 socket.on('end_game', function (data) {
     isturn = data.turn;
     document.querySelector('.error').classList.remove('hidden');
@@ -177,17 +177,6 @@ const update_room = function (data) {
         room_message.textContent = 'Room name is taken, please pick another one';
     }
 }
-
-
-
-
-
-//  TESITING
-// overlay.classList.add('hidden');
-// starting_box.classList.add('hidden');
-
-
-
 
 // The following code are used to handle "Play Again" request
 
@@ -239,10 +228,7 @@ socket.on('replay', function (data) {
     else turn_sign.style.backgroundColor = '#9a9a9a';
 
     document.getElementById('replay-container').classList.add('hidden');
-
-
 });
-
 
 // Check every game cells to decide 'move' by turn
 for (const element of allCells) {
@@ -253,3 +239,4 @@ for (const element of allCells) {
         }
     });
 }
+

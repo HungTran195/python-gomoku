@@ -223,13 +223,17 @@ def connect(sid, environ):
 
 @ sio.event
 def disconnect(sid):
+
     global games
+    print(games)
+
     for game_id, game in games.items():
         if game.player_id.get(sid) is not None:
-            game.close_game()
+            games.pop(game_id)
             msg = 'Your friend just left the game!'
             data = {'turn': 2,
                     'msg': msg}
             sio.emit('end_game', data, room=game_id)
+            print(games)
             break
     # print('Client disconnected', sid)

@@ -27,6 +27,7 @@
     </header>
     <main id="main">
         <div class="overlay"></div>
+        <div class="background"></div>
         <div class="game-field">
             <div class="play-area">
                 <div class="lobby" id="lobby">
@@ -65,40 +66,36 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="board" id="board">
-
                     <div class="turn">
                         <div class="turn-sign" id="turn-sign"></div>
                         <p>Your Turn</p>
                     </div>
-
-                    <div class="play-board" id="play-board">
-                        <div class="replay-container" id="replay-container">
-                            <div class="replay-btn" id="replay-request">
-                                <button class="btn btn-dark" onclick="request_replay()">Play Again</button>
+                    <div class="replay-container" id="replay-container">
+                        <div class="replay-btn" id="replay-request">
+                            <button class="btn btn-dark" onclick="request_replay()">Play Again</button>
+                        </div>
+                        <div class="float-box" id="wait-for-replay">
+                            <p> Waiting for your friend...</p>
+                            <div class=" loader">
+                                <div class=" spinning"></div>
                             </div>
-                            <div class="float-box" id="wait-for-replay">
-                                <p> Waiting for your friend...</p>
-                                <div class=" loader">
-                                    <div class=" spinning"></div>
-                                </div>
-                            </div>
-                            <div class="replay-confirm" id="replay-confirm">
-                                <p>Your friend is challenging for a new game</p>
-                                <button class="btn btn-light" onclick="accept_replay()">Accept</button>
-                            </div>
-
+                        </div>
+                        <div class="replay-confirm" id="replay-confirm">
+                            <p>Your friend is challenging for a new game</p>
+                            <button class="btn btn-light" onclick="accept_replay()">Accept</button>
                         </div>
 
-
-
+                    </div>
+                    <div>
                         <div class="winner-banner">
                             <p>You win!</p>
                         </div>
                         <div class="loser-banner">
                             <p>You lose!</p>
                         </div>
+                    </div>
+                    <div class="play-board" id="play-board">
                         {% for index, value in play_board_1D_array.items %}
                         <div class="cell" id="{{index}}">{{value}}</div>
                         {%endfor%}
