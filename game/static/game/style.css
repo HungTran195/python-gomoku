@@ -74,6 +74,13 @@ p {
 }
 
 .game-field {
+    /* display: flex; */
+    background-color: #e2e5e5;
+    width: 100%;
+    max-width: 1000px;
+}
+
+.play-area{
     position: relative;
     display: flex;
     align-items: center;
@@ -87,15 +94,10 @@ p {
     align-items: center;
     justify-content: center;
     text-align: center;
+    height: 100%;
+    width: 100%;
 }
 
-.lobby .background-img img {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    
-}
 
 #get-name-box {
     padding: 10px;
@@ -106,8 +108,8 @@ p {
     margin: 10px 5px 20px;
 }
 
-.lobby .float-box {
-    /* position: absolute; */
+.float-box {
+    position: absolute;
     background: #2c3e50;
     color: #fff;
     font-size: 1.4rem;
@@ -127,6 +129,8 @@ p {
     color: #6fd06f;
 }
 
+
+
 .error.float-box{
     /* position: absolute; */
     color: #ff7878;
@@ -135,7 +139,7 @@ p {
 }
 
 .board {
-    /* position: absolute; */
+    position: relative;
     top: 0;
     display: flex;
     flex-direction: column;
@@ -143,27 +147,39 @@ p {
     /* align-items: center; */
 }
 
-.board .game-score {
-    display: inline-flex;
+.replay {
+    position: absolute;
+    display: flex;
     justify-content: center;
     align-items: center;
-    font-family: 'Roboto';
-    font-size: 1.7rem;
+    text-align: center;
+    height: 100%;
+    width: 100%;
+    animation: float-in 0.5s ease-in;
+}
+
+.replay-container {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    height: 100%;
+    width: 100%;
+
+}
+
+.replay-container .replay-confirm{
+    background-color: #474747;
+    color: #e7e7e7;
+    font-size: 1.4rem;
     font-weight: 500;
-    color: cadetblue;
+    padding: 20px;
+    border-radius: 20px;
+    animation: float-in 0.3s ease-in;
 }
 
-.board .game-score p:first-child{
-    margin-right: 30px;
-}
-
-.board .game-score p:last-child{
-    margin-left: 30px;
-}
-
-.board .game-score p:nth-child(1){
-    margin: 0 30px;
-}
 
 .board .turn {
     display: flex;
@@ -213,12 +229,73 @@ p {
     background-color: #ffebbe;
 }
 
+.bottom-bar{
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    margin-top: 20px;
+    width: 100%;
+}
+
+.stat-bar{
+    display: grid;
+    grid-template-columns: repeat(20, 1fr);
+    grid-template-rows: auto;
+    max-width: 1000px;
+    font-weight: 400;
+    font-size: 1.4rem;
+    width: 100%;
+
+}
+
+.img-player{
+    grid-area: 1 / 1 / 3 / 3;
+    place-self: center;
+    
+}
+
+.img-player img{
+    max-width: 60px;
+}
+
+#img-player2{
+    grid-area: 1 / -3 / 3 / -1;
+}
+
+
+.player {
+    grid-area: 1 / 3 / 3 / 8;    
+    color: #ff7878;      
+    justify-self: left;
+    align-self: center;
+    padding: 0 5px;
+
+}
+
+#player2{
+    grid-area: 1 / -8 / 3 / -3;
+    justify-self: right;
+
+
+}
+
+.score {
+    grid-area: 1 / 10 / 3 / 11;
+    place-self: center;
+}
+
+#score2 {
+    grid-area: 1 / -11 / 3 / -10;
+
+}
+
+
 .chat-field {
     max-width: 300px;
 }
 
 .winner-banner, .loser-banner {
-    position: absolute;
+    position: absolute;    
     font-size: 1.5rem;
     font-weight: 400;
     display: flex;
@@ -255,10 +332,10 @@ p {
 
 
 .btn {
-    font-size: 1.3rem;
     padding: 10px 15px;
     border-radius: 8px;
     border: 1px;
+    font-size: 1.4rem;
 }
 
 .btn-light {
@@ -270,9 +347,14 @@ p {
     background-color: #77f077;
 }
 
+.btn-dark {
+    background-color: rgb(44, 62, 80, 0.8);
+    color: #fff;
+}
+.btn-dark:hover{
+    background-color: rgb(0, 40, 100, 0.8);
+    color: #fff;
 
-.btn-start {   
-    font-size: 1.4rem;
 }
 
 .winner-nodes{
@@ -309,6 +391,5 @@ p {
     .overlay{
         height: 100%;
     }        
-
 }
 

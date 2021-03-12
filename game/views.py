@@ -1,27 +1,27 @@
 from django.http.response import HttpResponseNotFound
-from django.shortcuts import render
 from django.http import HttpResponse
-import socketio
-from django.http import HttpResponseNotFound
-from urllib.parse import urljoin
+from django.shortcuts import render
 from .helper import Game, generate_game_id
+from urllib.parse import urljoin
+import socketio
 import re
 import os
+
 
 # Create your views here.
 
 NUM_COL = 18
 NUM_ROW = 20
+ASYNC_MODE = 'eventlet'
 HOST = os.environ.get('HOST_URL', 'http://127.0.0.1:8000/')
+
 turn = 1
 board = [[0 for _ in range(NUM_COL)] for _ in range(NUM_ROW)]
 
-ASYNC_MODE = 'eventlet'
 sio = socketio.Server(async_mode=ASYNC_MODE)
 thread = None
 
 games = {}
-
 play_board_1D_array = {}
 for i in range(NUM_ROW):
     for j in range(NUM_COL):
@@ -110,8 +110,10 @@ def start_game(sid, data):
 
             if len(game.player_id) == 2:
                 for id, turn in game.player_id.items():
+                    sid_opponent = game.player_opponent[id]
                     send_data = {'status:': status,
-                                 'turn': turn
+                                 'turn': turn,
+                                 'opponent': game.player_name[sid_opponent]
                                  }
                     sio.emit('start_game', send_data, room=id)
 
@@ -124,6 +126,8 @@ def start_game(sid, data):
 def move(sid, data):
     game_id, move_index = int(data['game_id']), int(data['move_index'])
     is_winner = 0
+    err_msg = ''
+
     if not games.get(game_id):
         err_msg = 'Something went wrong'
         sio.emit('move', err_msg, room=game_id)
@@ -145,6 +149,63 @@ def move(sid, data):
                             'move_id': game.player_id[sid],
                             'turn': turn}
                     sio.emit('move', data, room=id)
+
+
+@ sio.event
+def request_replay(sid, data):
+    global games
+
+    game_id = data['game_id']
+    game_id = int(re.sub("[^0-9]+", " ", game_id))
+    status = err_msg = ''
+
+    if not game_id:
+        status = 'failed'
+        err_msg = 'There is something wrong, please reload page!'
+
+    elif games.get(game_id) is None:
+        status = 'failed'
+        err_msg = 'Room does not exist!'
+    else:
+        status = 'success'
+        game = games[game_id]
+        opponent_id = game.player_opponent[sid]
+        sio.emit('request_replay', '', room=opponent_id)
+
+    if err_msg:
+        sio.emit('request_replay', {'status:': status,
+                                    'err_msg': err_msg}, room=sid)
+
+
+@ sio.event
+def accept_replay(sid, data):
+    game_id = data['game_id']
+    game_id = int(re.sub("[^0-9]+", " ", game_id))
+    status = err_msg = ''
+
+    if not game_id:
+        status = 'failed'
+        err_msg = 'There is something wrong, please reload page!'
+
+    elif games.get(game_id) is None:
+        status = 'failed'
+        err_msg = 'Room does not exist!'
+    else:
+        status = 'success'
+        game = games[game_id]
+        game.reset_game()
+        # Reverse turn
+        # Player 2 plays first instead of player 1
+
+        for player_id, player_turn in game.player_id.items():
+            turn = 0 if player_turn else 1
+            game.player_id[player_id] = turn
+            data = {'turn': turn}
+            sio.emit('replay', data, room=player_id)
+
+    if err_msg:
+        sio.emit('request_replay', {'status:': status,
+                                    'err_msg': err_msg}, room=sid)
 
 
 @ sio.event

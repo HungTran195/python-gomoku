@@ -19,18 +19,33 @@ class Game:
     def __init__(self, game_id):
         self.game_id = game_id
         self.player_id = {}
+        self.player_opponent = {}
         self.player_name = {}
         self.play_board = [[0 for _ in range(NUM_COL)] for _ in range(NUM_ROW)]
-        self.winner = 0
+        self.winner = None
+        self.stat_board = {}
         self.winning_line = []
         self.turn = 1
 
     def create_new_game(self, game_id, id, player_name):
         if not self.player_id:
             self.player_id[id] = 1
+            self.stat_board[id] = 0
+            self.player_opponent[id] = 0
         else:
             self.player_id[id] = 0
+            self.stat_board[id] = 0
+            for sid, val in self.player_opponent.items():
+                self.player_opponent[sid] = id
+                self.player_opponent[id] = sid
+                break
         self.player_name[id] = player_name
+
+    def reset_game(self):
+        self.turn = 1
+        self.winning_line = []
+        self.winner = None
+        self.play_board = [[0 for _ in range(NUM_COL)] for _ in range(NUM_ROW)]
 
     def process_move(self, sid, move_index):
         row, col = self.convert_index_to_2D(move_index)
@@ -42,6 +57,7 @@ class Game:
                     winning_line.append(self.convert_index_to_1D(index))
                 self.winning_line = winning_line
                 self.winner = sid
+                self.stat_board[sid] += 1
                 self.turn = 2
 
             else:

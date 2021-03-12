@@ -28,70 +28,113 @@
     <main id="main">
         <div class="overlay"></div>
         <div class="game-field">
-            <div class="lobby" id="lobby">
-                <div class="hidden background-img">
-                    <img src="" alt="">
-                </div>
-                <div class="float-box" id="starting-box">
-                    <div class="name-box" id="name-box">
-                        {% if not is_start_page %}
-                        <div>
-                            <p>You are about to play with <em> {{player_name}} </em></p>
+            <div class="play-area">
+                <div class="lobby" id="lobby">
+                    <div class="float-box" id="starting-box">
+                        <div class="name-box" id="name-box">
+                            {% if not is_start_page %}
+                            <div>
+                                <p>You are about to play with <em id="opponent"> {{player_name}} </em></p>
+                            </div>
+                            {% endif %}
+                            <input type="text" name="name" id="get-name-box" placeholder="Your Name">
+                            <button class="btn btn-light btn-start" onclick="start_game()">Start Game</button>
                         </div>
-                        {% endif %}
-                        <input type="text" name="name" id="get-name-box" placeholder="Your Name">
-                        <button class="btn btn-light btn-start" onclick="start_game()">Start Game</button>
-                    </div>
-                    <div class="new-game-box hidden ">
-                        {% if is_start_page %}
-                        <div>
-                            <p id="welcome-msg">Hello </p>
-                            <p>Here is your room, just share it to your friend!</p>
-                            <p><a id="room_url" href="{{room_url}}">{{room_url}}</a> </p>
-                        </div>
-                        {% endif %}
-                        <div>
-                            <p> Waiting for your friend...</p>
-                            <div class="loader">
-                                <div class=" spinning"></div>
+                        <div class="new-game-box hidden ">
+                            {% if is_start_page %}
+                            <div>
+                                <p id="welcome-msg">Hello </p>
+                                <p>Here is your room, just share it to your friend!</p>
+                                <p><a id="room_url" href="{{room_url}}">{{room_url}}</a> </p>
+                            </div>
+                            {% endif %}
+                            <div>
+                                <p> Waiting for your friend...</p>
+                                <div class="loader">
+                                    <div class=" spinning"></div>
+                                </div>
                             </div>
                         </div>
+
+
                     </div>
-
-
+                    <div class="hidden error float-box">
+                        <p id="error_msg"></p>
+                        <div>
+                            <a class="btn btn-light" href="{{host}}">New Game</a>
+                        </div>
+                    </div>
                 </div>
-                <div class="hidden error float-box">
-                    <p id="error_msg"></p>
-                    <div>
-                        <a class="btn btn-light btn-start" href="{{host}}">New Game</a>
+
+                <div class="board" id="board">
+
+                    <div class="turn">
+                        <div class="turn-sign" id="turn-sign"></div>
+                        <p>Your Turn</p>
                     </div>
+
+                    <div class="play-board" id="play-board">
+                        <div class="replay-container" id="replay-container">
+                            <div class="replay-btn" id="replay-request">
+                                <button class="btn btn-dark" onclick="request_replay()">Play Again</button>
+                            </div>
+                            <div class="float-box" id="wait-for-replay">
+                                <p> Waiting for your friend...</p>
+                                <div class=" loader">
+                                    <div class=" spinning"></div>
+                                </div>
+                            </div>
+                            <div class="replay-confirm" id="replay-confirm">
+                                <p>Your friend is challenging for a new game</p>
+                                <button class="btn btn-light" onclick="accept_replay()">Accept</button>
+                            </div>
+
+                        </div>
+
+
+
+                        <div class="winner-banner">
+                            <p>You win!</p>
+                        </div>
+                        <div class="loser-banner">
+                            <p>You lose!</p>
+                        </div>
+                        {% for index, value in play_board_1D_array.items %}
+                        <div class="cell" id="{{index}}">{{value}}</div>
+                        {%endfor%}
+                    </div>
+
                 </div>
             </div>
+            <div class="bottom-bar hidden">
+                <div class="stat-bar">
+                    <div class="img-player" id="img-player1">
+                        <img src="{% static 'game/images/chicken1.png' %}" alt="">
+                    </div>
 
-            <div class="board" id="board">
-                <div class="game-score">
-                    <p id="player1-name"></p>
-                    <p id="score"></p>
-                    <p id="player2-name"></p>
-                </div>
-                <div class="turn">
-                    <div class="turn-sign" id="turn-sign"></div>
-                    <p>Your Turn</p>
-                </div>
-                <div class="play-board" id="play-board">
-                    <div class="hidden winner-banner">
-                        <p>You win!</p>
+                    <div class="player" id="player1">
+                        <p>Tony Stark</p>
                     </div>
-                    <div class="hidden loser-banner">
-                        <p>You lose!</p>
+                    <div class="score" id="score1">
+                        <p>0</p>
                     </div>
-                    {% for index, value in play_board_1D_array.items %}
-                    <div class="cell" id="{{index}}">{{value}}</div>
-                    {%endfor%}
+
+                    <div class="img-player" id="img-player2">
+                        <img src="{% static 'game/images/chicken1.png' %}" alt="">
+                    </div>
+
+                    <div class="player" id="player2">
+                        <p>Bruce Wayne</p>
+                    </div>
+                    <div class="score" id="score2">
+                        <p>0</p>
+                    </div>
+
                 </div>
             </div>
-
         </div>
+
+
         <div class="chat-field hidden" id="chat-field">
             <div>
                 <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Saepe, iusto, veritatis praesentium vitae
