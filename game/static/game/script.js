@@ -147,9 +147,9 @@ socket.on('move', function (data) {
         $('#error_msg').append(data.err_msg + '<br>');
     }
     updateMove(data.move_id, data.move_index);
-    if (data.winning_line.length !== 0) {
+    if (data.winning_line_index.length !== 0) {
         isturn = 0;
-        draw_winner(data.winning_line, data.is_winner);
+        draw_winner(data.winning_line_index, data.is_winner);
     };
     isturn = data.turn;
     if (isturn) turn_sign.style.backgroundColor = '#77f077';

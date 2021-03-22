@@ -314,7 +314,7 @@ p {
     align-items: center;
     text-align: center;
     width: 100%;
-    z-index: 10;
+    z-index: 1;
     animation: float-in 0.5s linear;
 }
 

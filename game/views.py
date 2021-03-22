@@ -1,7 +1,10 @@
 from django.http.response import HttpResponseNotFound
 from django.http import HttpResponse
 from django.shortcuts import render
-from .helper import Game, generate_game_id
+from .helper import generate_game_id, get_game_id
+from .game import Game
+from .config import Config
+
 from urllib.parse import urljoin
 import socketio
 import re
@@ -9,41 +12,16 @@ import os
 
 
 # Create your views here.
+HOST = os.environ.get('HOST_URL', Config.SERVER)
+# Used for game sync and user communication
+sio = socketio.Server(async_mode=Config.ASYNC_MODE)
 
-NUM_COL = 18
-NUM_ROW = 20
-ASYNC_MODE = 'eventlet'
-HOST = os.environ.get('HOST_URL', 'http://127.0.0.1:8000/')
-
-turn = 1
-board = [[0 for _ in range(NUM_COL)] for _ in range(NUM_ROW)]
-
-sio = socketio.Server(async_mode=ASYNC_MODE)
-thread = None
-
+# Store all available games
 games = {}
-play_board_1D_array = {}
-for i in range(NUM_ROW):
-    for j in range(NUM_COL):
-        play_board_1D_array[i*NUM_ROW + j] = ''
-
-
-def background_thread():
-    """Example of how to send server generated events to clients."""
-    count = 0
-    while True:
-        sio.sleep(20)
-        count += 1
-        sio.emit('my_response', {'data': 'Server generated event'},
-                 namespace='/test')
 
 
 def index(request):
-    global thread
     global games
-
-    if thread is None:
-        thread = sio.start_background_task(background_thread)
 
     while True:
         game_id = generate_game_id()
@@ -53,9 +31,8 @@ def index(request):
             break
     url = urljoin(HOST, str(game_id))
 
-    context = {'play_board_1D_array': play_board_1D_array,
-               'turn': turn,
-               'room_url': url,
+    context = {'room_url': url,
+               'board_index': range(Config.NUM_COL * Config.NUM_ROW),
                'host': HOST,
                'is_start_page': True}
 
@@ -64,18 +41,17 @@ def index(request):
 
 def invited_game(request, game_id):
     global games
-
+    player_name = ''
     if games.get(int(game_id)) is None:
         return HttpResponseNotFound('<h1>Page not found! Check your link</h1>')
 
     game = games[int(game_id)]
 
-    for _, name in game.player_name.items():
+    for _, name in game.id_to_name.items():
         player_name = name
 
-    context = {'play_board_1D_array': play_board_1D_array,
-               'turn': turn,
-               'host': HOST,
+    context = {'host': HOST,
+               'board_index': range(Config.NUM_COL * Config.NUM_ROW),
                'player_name': player_name,
                'is_start_page': False}
 
@@ -86,34 +62,36 @@ def invited_game(request, game_id):
 def start_game(sid, data):
     global games
     err_msg = ''
-    game_id = data['game_id']
-    game_id = int(re.sub("[^0-9]+", " ", game_id))
     player_name = data['player_name']
-    send_data = None
-    if not game_id:
-        status = 'failed'
-        err_msg = 'There is something wrong, please reload page!'
+    if not player_name:
+        player_name = 'Default'
+    # Get game id from received data
+    game_id = get_game_id(data['game_id'], all_games=games)
 
-    elif games.get(game_id) is None:
+    if not game_id:
         status = 'failed'
         err_msg = 'Room does not exist!'
 
     else:
-        status = 'success'
         game = games[game_id]
-
-        if len(game.player_id) > 1:
+        if len(game.id_to_turn) > 1:
+            # There are 2 players => room is full
+            status = 'failed'
             err_msg = 'Room is full!'
         else:
-            game.create_new_game(game_id, sid, player_name)
+            status = 'success'
+
+            ''' Create a new game with player name and turn
+                or update existing game with the second opponent'''
+            game.create_new_game(sid, player_name)
             sio.enter_room(sid, game_id)
 
-            if len(game.player_id) == 2:
-                for id, turn in game.player_id.items():
-                    sid_opponent = game.player_opponent[id]
+            if len(game.id_to_turn) == 2:
+                for id, turn in game.id_to_turn.items():
+                    sid_opponent = game.id_to_opponent[id]
                     send_data = {'status:': status,
                                  'turn': turn,
-                                 'opponent': game.player_name[sid_opponent]
+                                 'opponent': game.id_to_name[sid_opponent]
                                  }
                     sio.emit('start_game', send_data, room=id)
 
@@ -133,20 +111,20 @@ def move(sid, data):
         sio.emit('move', err_msg, room=game_id)
     else:
         game = games[game_id]
-        if sid in game.player_id and game.player_id[sid] == game.turn:
+        if sid in game.id_to_turn and game.id_to_turn[sid] == game.current_turn:
             if game.process_move(sid, move_index):
-                for id, turn in game.player_id.items():
+                for id, turn in game.id_to_turn.items():
                     if turn < 2:
-                        turn = 1 if game.turn == turn else 0
-                    if game.winning_line is not None:
-                        if id == game.winner:
+                        turn = 1 if game.current_turn == turn else 0
+                    if game.winning_line_index is not None:
+                        if id == game.winner_id:
                             is_winner = 1
                         else:
                             is_winner = 0
                     data = {'move_index': move_index,
                             'is_winner': is_winner,
-                            'winning_line': game.winning_line,
-                            'move_id': game.player_id[sid],
+                            'winning_line_index': game.winning_line_index,
+                            'move_id': game.id_to_turn[sid],
                             'turn': turn}
                     sio.emit('move', data, room=id)
 
@@ -169,7 +147,7 @@ def request_replay(sid, data):
     else:
         status = 'success'
         game = games[game_id]
-        opponent_id = game.player_opponent[sid]
+        opponent_id = game.id_to_opponent[sid]
         sio.emit('request_replay', '', room=opponent_id)
 
     if err_msg:
@@ -197,11 +175,11 @@ def accept_replay(sid, data):
         # Reverse turn
         # Player 2 plays first instead of player 1
 
-        for player_id, player_turn in game.player_id.items():
+        for id_to_turn, player_turn in game.id_to_turn.items():
             turn = 0 if player_turn else 1
-            game.player_id[player_id] = turn
+            game.id_to_turn[id_to_turn] = turn
             data = {'turn': turn}
-            sio.emit('replay', data, room=player_id)
+            sio.emit('replay', data, room=id_to_turn)
 
     if err_msg:
         sio.emit('request_replay', {'status:': status,
@@ -215,25 +193,18 @@ def disconnect_request(sid):
 
 @ sio.event
 def connect(sid, environ):
-    category = 'connect'
-    data = {'category': category, 'status': 'Connected',
-            'count': 0}
-    sio.emit('my_response', {'data': data}, room=sid)
+    pass
 
 
 @ sio.event
 def disconnect(sid):
-
     global games
-    print(games)
-
     for game_id, game in games.items():
-        if game.player_id.get(sid) is not None:
+        if game.id_to_turn.get(sid) is not None:
             games.pop(game_id)
             msg = 'Your friend just left the game!'
             data = {'turn': 2,
                     'msg': msg}
             sio.emit('end_game', data, room=game_id)
-            print(games)
             break
     # print('Client disconnected', sid)

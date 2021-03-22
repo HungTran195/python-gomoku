@@ -96,8 +96,8 @@
                         </div>
                     </div>
                     <div class="play-board" id="play-board">
-                        {% for index, value in play_board_1D_array.items %}
-                        <div class="cell" id="{{index}}">{{value}}</div>
+                        {% for index in board_index %}
+                        <div class="cell" id="{{index}}"></div>
                         {%endfor%}
                     </div>
 
