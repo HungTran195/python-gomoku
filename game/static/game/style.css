@@ -114,6 +114,14 @@ p {
     margin: 10px 5px 20px;
 }
 
+.two-col{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
 .float-box {
     position: absolute;
     background: #2c3e50;
@@ -305,7 +313,7 @@ p {
     max-width: 300px;
 }
 
-.winner-banner, .loser-banner {
+.result-banner {
     position: absolute;    
     font-size: 1.5rem;
     font-weight: 400;
@@ -329,9 +337,9 @@ p {
     }
 }
 
-.winner-banner p, .loser-banner p {
+.result-banner p {
     background-color: #f5f5dc;
-    width: 120px;
+    width: 140px;
     border-radius: 8px;
 }
 
@@ -365,7 +373,14 @@ p {
 .btn-dark:hover{
     background-color: rgb(0, 40, 100, 0.8);
     color: #fff;
+}
 
+.btn-small {
+    width: 200px;
+}
+
+.margin-med {
+    margin: 15px;
 }
 
 .winner-nodes{

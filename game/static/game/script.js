@@ -12,23 +12,7 @@ const allCells = document.querySelectorAll('.cell');
 const score_opponent = document.getElementById('score2');
 
 
-let move_index, isturn, player_name = '', mode;
-
-// Initialise page with hidden tags
-const init = function (mode = '') {
-    if (mode === 'start_game') {
-        overlay.classList.remove('hidden');
-    }
-    document.querySelector('.new-game-box').classList.add('hidden');
-    document.getElementById('replay-request').classList.remove('hidden');
-    document.getElementById('wait-for-replay').classList.add('hidden');
-    document.getElementById('replay-confirm').classList.add('hidden');
-    document.querySelector('.winner-banner').classList.add('hidden');
-    document.querySelector('.loser-banner').classList.add('hidden');
-    document.getElementById('replay-container').classList.add('hidden');
-}
-init('start_game');
-
+let move_index, isturn, player_name = '', is_host;
 // Get game id from server
 const get_room_url = function () {
     let room_url = document.getElementById('room_url');
@@ -37,7 +21,7 @@ const get_room_url = function () {
         room_url = room_url.textContent.split('/');
         if (room_url.length > 3) {
             game_id = room_url[room_url.length - 1].toString();
-            mode = 'host';
+            is_host = 1;
         }
         else {
             game_id = '';
@@ -49,46 +33,81 @@ const get_room_url = function () {
         current_page = current_page.split('/');
         if (current_page.length > 3) {
             game_id = current_page[current_page.length - 1].toString();
-            mode = 'guest';
+            is_host = 0;
         }
+    }
+    if (!game_id) {
+        alert('There are no available room, please try again later');
     }
     return game_id;
 };
 const game_id = get_room_url();
 
+// Initialise page with hidden tags
+const init = function (mode = '') {
+    if (mode === 'init') {
+        overlay.classList.remove('hidden');
+    }
+    if (is_host) {
+        starting_box.classList.add('hidden');
+    }
+    document.querySelector('.new-game-box').classList.add('hidden');
+    document.getElementById('replay-request').classList.remove('hidden');
+    document.getElementById('wait-for-replay').classList.add('hidden');
+    document.getElementById('replay-confirm').classList.add('hidden');
+    document.getElementById('result-banner').classList.add('hidden');
+    document.getElementById('replay-container').classList.add('hidden');
+}
+init('init');
+
+const play_with_ai = function () {
+    document.getElementById('choose-game-type').classList.add('hidden');
+    overlay.classList.add('hidden');
+    isturn = 1;
+    turn_sign.style.backgroundColor = '#77f077';
+    socket.emit('play_with_ai', { game_id: game_id });
+}
+socket.on('play_with_ai', function (data) {
+
+});
+
+const play_with_human = function () {
+    document.getElementById('choose-game-type').classList.add('hidden');
+    starting_box.classList.remove('hidden');
+}
 
 // Get typed name 
 // Send game infor to server and wait for other player to join game
-const start_game = function () {
+const start_PvP_game = function () {
     player_name = document.getElementById("get-name-box").value;
     if (player_name) {
-        if (mode === 'host') {
+        if (is_host) {
             let msg = document.getElementById("welcome-msg").textContent;
             msg = msg + player_name + ',';
             document.getElementById("welcome-msg").textContent = msg
             document.querySelector('.new-game-box').classList.remove('hidden');
         }
         document.getElementById('name-box').classList.add('hidden');
-        socket.emit('start_game', { game_id: game_id, player_name: player_name });
+        socket.emit('start_PvP_game', { game_id: game_id, player_name: player_name, is_host: is_host });
     }
 }
 // Incase user hit "Enter" key
-// Call start_game function and continue
+// Call start_PvP_game function and continue
 document.getElementById('get-name-box').addEventListener('keydown', (e) => {
     if (e.key == 'Enter') {
-        start_game();
+        start_PvP_game();
     }
 })
 
 // Handle received message from server to start game
-socket.on('start_game', function (data) {
+socket.on('start_PvP_game', function (data) {
     // Display error message if:
     // Room is full or Wrong room id or Room is closed
     if (data.err_msg) {
         document.querySelector('.error').classList.remove('hidden');
         $('#error_msg').append(data.err_msg + '<br>');
     }
-    isturn = data.turn;
+    isturn = data.is_turn;
 
     if (isturn) turn_sign.style.backgroundColor = '#77f077';
     else turn_sign.style.backgroundColor = '#9a9a9a';
@@ -112,29 +131,37 @@ const draw_winning_line = function (line, is_winner) {
 }
 
 const draw_winner = function (line, is_winner) {
-    draw_winning_line(line, is_winner);
-    if (is_winner) {
-        document.querySelector('.winner-banner').classList.remove('hidden');
-        let score = document.getElementById('score1').children[0].textContent;
-        document.getElementById('score1').children[0].textContent = parseInt(score) + 1
-    }
+    if (line.length !== 0) {
+        draw_winning_line(line, is_winner);
+        if (is_winner) {
+            document.getElementById('result-banner').classList.remove('hidden');
+            document.getElementById('result-banner').children[0].textContent = 'You Win!'
+            let score = document.getElementById('score1').children[0].textContent;
+            document.getElementById('score1').children[0].textContent = parseInt(score) + 1
+        }
 
+        else {
+            document.getElementById('result-banner').classList.remove('hidden');
+            document.getElementById('result-banner').children[0].textContent = 'You Lose!'
+
+            let score = document.getElementById('score2').children[0].textContent;
+            document.getElementById('score2').children[0].textContent = parseInt(score) + 1
+        }
+    }
     else {
-        document.querySelector('.loser-banner').classList.remove('hidden');
-        let score = document.getElementById('score2').children[0].textContent;
-        document.getElementById('score2').children[0].textContent = parseInt(score) + 1
+        document.getElementById('result-banner').classList.remove('hidden');
+        document.getElementById('result-banner').children[0].textContent = 'Game Draw!'
     }
-
     window.setTimeout(() => {
         document.getElementById('replay-container').classList.remove('hidden')
     }, 1000);
 }
 
 // Process received message from server to display move
-const updateMove = function (move_id, move_index) {
+const updateMove = function (turn_of_current_move, move_index) {
     let move = document.getElementById(move_index);
     if (move) {
-        if (move_id) move.textContent = 'X';
+        if (turn_of_current_move) move.textContent = 'X';
         else move.textContent = 'O';
     }
 };
@@ -142,16 +169,19 @@ const updateMove = function (move_id, move_index) {
 // get message from server
 socket.on('move', function (data) {
     // $('#log').append('<br>Received: ' + msg.data); 
+    console.log(data)
     if ('err_msg' in data) {
         document.querySelector('.error').classList.remove('hidden');
         $('#error_msg').append(data.err_msg + '<br>');
     }
-    updateMove(data.move_id, data.move_index);
-    if (data.winning_line_index.length !== 0) {
+    updateMove(data.turn_of_current_move, data.move_index);
+    if (data.is_turn == 2) {
         isturn = 0;
         draw_winner(data.winning_line_index, data.is_winner);
-    };
-    isturn = data.turn;
+
+    }
+    else isturn = data.is_turn;
+
     if (isturn) turn_sign.style.backgroundColor = '#77f077';
     else turn_sign.style.backgroundColor = '#9a9a9a';
 
@@ -159,7 +189,7 @@ socket.on('move', function (data) {
 
 /* Socket listen on "end_game" from server, if one player left game*/
 socket.on('end_game', function (data) {
-    isturn = data.turn;
+    isturn = data.is_turn;
     document.querySelector('.error').classList.remove('hidden');
     $('#error_msg').append(data.msg + '<br>');
     overlay.classList.toggle('hidden');
@@ -222,7 +252,7 @@ socket.on('replay', function (data) {
     init();
 
 
-    isturn = data.turn;
+    isturn = data.is_turn;
 
     if (isturn) turn_sign.style.backgroundColor = '#77f077';
     else turn_sign.style.backgroundColor = '#9a9a9a';

@@ -1,4 +1,6 @@
+from re import A
 from .config import Config
+from .helper import Helper
 
 
 class Game:
@@ -13,6 +15,8 @@ class Game:
         self.stat_board = {}
         self.winning_line_index = []
         self.current_turn = 1
+        self.type_opponent = 'human'
+        self.nb_moves = 0
 
     def create_new_game(self, id, player_name):
         if not self.id_to_turn:
@@ -35,21 +39,30 @@ class Game:
         self.play_board = [
             [0 for _ in range(Config.NUM_COL)] for _ in range(Config.NUM_ROW)]
 
-    def process_move(self, sid, move_index):
-        row, col = self.convert_index_to_2D(move_index)
-        winning_line_index = []
-        if self.play_board[row][col] == 0:
-            self.play_board[row][col] = self.current_turn + 1
-            if self.is_winning_move(row, col, self.current_turn+1):
-                for index in self.winning_line_index:
-                    winning_line_index.append(self.convert_index_to_1D(index))
-                self.winning_line_index = winning_line_index
-                self.winner_id = sid
-                self.stat_board[sid] += 1
-                self.current_turn = 2
-            else:
-                self.current_turn = not(self.current_turn)
-            return True
+    def process_move(self, sid, move_index_2D):
+        if self.id_to_turn.get(sid) == self.current_turn:
+            winning_line_index = []
+
+            row, col = move_index_2D
+            if self.play_board[row][col] == 0:
+                self.nb_moves += 1
+                self.play_board[row][col] = self.current_turn + 1
+
+                if self.nb_moves == Config.NUM_COL * Config.NUM_ROW:
+                    self.current_turn = 2
+
+                elif self.is_winning_move(row, col, self.current_turn+1):
+                    for index in self.winning_line_index:
+                        winning_line_index.append(
+                            Helper.convert_index_to_1D(index))
+                    self.winning_line_index = winning_line_index
+                    self.winner_id = sid
+                    self.stat_board[sid] += 1
+                    self.current_turn = 2
+                else:
+                    self.current_turn = not(self.current_turn)
+                return True
+
         return False
 
     def is_winning_move(self, x, y, target):
@@ -58,35 +71,41 @@ class Game:
                 return True
         return False
 
+    def is_available_index(self, board, x, y, compared_target, contain_set):
+        if x >= 0 and y >= 0 and x < Config.NUM_ROW and y < Config.NUM_COL and \
+                board[x][y] == compared_target and (x, y) not in contain_set:
+            return True
+        return False
+
     def count_connected(self, x, y, target, direction):
         count = 1
         stack = []
         seen = set()
-        if direction == 'up_down':
+        if direction == 'left_right':
             stack.append((x, y))
             seen.add((x, y))
             while stack:
-                if y > 0 and self.play_board[x][y-1] == target and (x, y-1) not in seen:
+                if self.is_available_index(self.play_board, x, y - 1, target, seen):
                     stack.append((x, y-1))
                     seen.add((x, y-1))
                     count += 1
 
-                if y + 1 < Config.NUM_ROW and self.play_board[x][y+1] == target and (x, y+1) not in seen:
+                if self.is_available_index(self.play_board, x, y + 1, target, seen):
                     stack.append((x, y+1))
                     seen.add((x, y+1))
                     count += 1
                 x, y = stack.pop()
 
-        if direction == 'left_right':
+        if direction == 'up_down':
             stack.append((x, y))
             seen.add((x, y))
             while stack:
-                if x > 0 and self.play_board[x-1][y] == target and (x-1, y) not in seen:
+                if self.is_available_index(self.play_board, x-1, y, target, seen):
                     stack.append((x-1, y))
                     seen.add((x-1, y))
                     count += 1
 
-                if x + 1 < Config.NUM_COL and self.play_board[x+1][y] == target and (x+1, y) not in seen:
+                if self.is_available_index(self.play_board, x + 1, y, target, seen):
                     stack.append((x+1, y))
                     seen.add((x+1, y))
                     count += 1
@@ -96,27 +115,28 @@ class Game:
             stack.append((x, y))
             seen.add((x, y))
             while stack:
-                if x + 1 < Config.NUM_COL and y + 1 < Config.NUM_ROW and self.play_board[x+1][y+1] == target and (x+1, y+1) not in seen:
+                if self.is_available_index(self.play_board, x+1, y + 1, target, seen):
                     stack.append((x+1, y+1))
                     seen.add((x+1, y+1))
                     count += 1
 
-                if x > 0 and y > 0 and self.play_board[x-1][y-1] == target and (x-1, y-1) not in seen:
+                if self.is_available_index(self.play_board, x-1, y - 1, target, seen):
                     stack.append((x-1, y-1))
                     seen.add((x-1, y-1))
                     count += 1
+
                 x, y = stack.pop()
 
         if direction == 'down_right':
             stack.append((x, y))
             seen.add((x, y))
             while stack:
-                if x > 0 and y + 1 < Config.NUM_ROW and self.play_board[x-1][y+1] == target and (x-1, y+1) not in seen:
+                if self.is_available_index(self.play_board, x - 1, y + 1, target, seen):
                     stack.append((x-1, y+1))
                     seen.add((x-1, y+1))
                     count += 1
 
-                if x + 1 < Config.NUM_COL and y > 0 and self.play_board[x+1][y-1] == target and (x+1, y-1) not in seen:
+                if self.is_available_index(self.play_board, x+1, y - 1, target, seen):
                     stack.append((x+1, y-1))
                     seen.add((x+1, y-1))
                     count += 1
@@ -134,11 +154,6 @@ class Game:
                 current_game_state.append(self.play_board[i][j])
         return current_game_state
 
-    def convert_index_to_2D(self, index):
-        index = int(index)
-        row = index // Config.NUM_COL
-        col = index % Config.NUM_COL
-        return [row, col]
 
-    def convert_index_to_1D(self, index):
-        return index[0] * Config.NUM_COL + index[1]
+if __name__ == "__main__":
+    game = Game(1)

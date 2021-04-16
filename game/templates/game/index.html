@@ -31,24 +31,23 @@
         <div class="game-field">
             <div class="play-area">
                 <div class="lobby" id="lobby">
+                    <div class="float-box two-col" id="choose-game-type">
+                        <button class="btn btn-light btn-small margin-med" onclick="play_with_ai()">Play with
+                            AI</button>
+                        <button class="btn btn-light btn-small margin-med" onclick="play_with_human()">Play with
+                            friend</button>
+                    </div>
                     <div class="float-box" id="starting-box">
                         <div class="name-box" id="name-box">
-                            {% if not is_start_page %}
-                            <div>
-                                <p>You are about to play with <em id="opponent"> {{player_name}} </em></p>
-                            </div>
-                            {% endif %}
                             <input type="text" name="name" id="get-name-box" placeholder="Your Name">
-                            <button class="btn btn-light btn-start" onclick="start_game()">Start Game</button>
+                            <button class="btn btn-light btn-start" onclick="start_PvP_game()">Start Game</button>
                         </div>
                         <div class="new-game-box hidden ">
-                            {% if is_start_page %}
                             <div>
                                 <p id="welcome-msg">Hello </p>
                                 <p>Here is your room, just share it to your friend!</p>
                                 <p><a id="room_url" href="{{room_url}}">{{room_url}}</a> </p>
                             </div>
-                            {% endif %}
                             <div>
                                 <p> Waiting for your friend...</p>
                                 <div class="loader">
@@ -66,6 +65,7 @@
                         </div>
                     </div>
                 </div>
+
                 <div class="board" id="board">
                     <div class="turn">
                         <div class="turn-sign" id="turn-sign"></div>
@@ -88,11 +88,8 @@
 
                     </div>
                     <div>
-                        <div class="winner-banner">
-                            <p>You win!</p>
-                        </div>
-                        <div class="loser-banner">
-                            <p>You lose!</p>
+                        <div class="result-banner" id="result-banner">
+                            <p>123</p>
                         </div>
                     </div>
                     <div class="play-board" id="play-board">
