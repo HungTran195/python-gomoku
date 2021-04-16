@@ -211,6 +211,8 @@ def move(sid, data):
                     move_index_1D = Helper.convert_index_to_1D(
                         next_move_index_2D)
                     turn_of_current_move = game.id_to_turn[ai_id]
+                    if not game.process_move(ai_id, next_move_index_2D):
+                        print('something wrong')
 
 
 @ sio.event
