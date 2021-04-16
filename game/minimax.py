@@ -15,8 +15,8 @@ class MiniMax:
 
     '''
     Check whether index (x, y) is out of the board
-    :param x: abscissa (X-axis)
-    :param y: ordinate (Y-axis)
+    :param x: row index 
+    :param y: column index
     Return true/false
     '''
 
@@ -28,8 +28,8 @@ class MiniMax:
     '''
     Check if index (x, y) can be used for processing
     :param board: matrix represent the current board state
-    :param x: abscissa (X-axis)
-    :param y: ordinate (Y-axis)
+    :param x: row index 
+    :param y: column index
     :param compared_target: value of the current processing state
     :param contain_set: a set type variable contain all processed value
     :Return: true/false

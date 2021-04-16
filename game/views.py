@@ -18,16 +18,24 @@ ai_id = 'ai0'
 # Store all current games
 games = {}
 
+'''
+Main view when someone visit webpage
+'''
+
 
 def index(request):
-    global games
+    global games  # get full access to global variable games
 
+    # variable to decide how many game ids have been used
     try_times = 0
     while True:
         try_times += 1
         game_id = Helper.generate_game_id()
+        # Game id is not in the game list so break the loop
         if games.get(game_id) is None:
             break
+        # We only maintain at most 100,000,000 games at a time
+        # so we try at most 100000000 times
         if try_times > 100000000:
             game_id = -1
             break
@@ -44,14 +52,21 @@ def index(request):
     return HttpResponse(render(request, 'game/index.html', context))
 
 
+'''
+Invited view for guest, used in PvP mode
+'''
+
+
 def invited_game(request, game_id):
-    global games
+    global games  # get full access to global variable games
     player_name = ''
+
     if games.get(int(game_id)) is None:
         return HttpResponseNotFound('<h1>Page not found! Check your link</h1>')
 
-    game = games[int(game_id)]
+    game = games[int(game_id)]  # get game object from the list of all games
 
+    # get player name to display on screen for invited player
     for _, name in game.id_to_name.items():
         player_name = name
 
@@ -63,130 +78,129 @@ def invited_game(request, game_id):
     return HttpResponse(render(request, 'game/invited.html', context))
 
 
-@ sio.event
-def play_with_ai(sid, data):
-    ''' Socket listener function
-    Function used to create a "Player vs AI" game object
-    Input:
-        - sid: player's ID
-        - data['player_name']: player name
-        - data['game_id']: unique game ID
-    '''
-    global games
+'''
+Socket listener function
+Handle start game event for PvP mode or AI mode
+:param sid: player's ID
+:param data: dict. Contain informatione:
+    - game_type: 'ai' or 'human'
+    - game_id: unique game id
+    - player_name: player's nick name (in PvP mode)
+    - is_host: true/false. Decide who created the room and has 1st turn (in PvP mode)
+'''
 
-    # player_name = data['player_name']
-    player_name = 'Default'
-    # Get game id from received data
+
+@sio.event
+def start_game(sid, data):
+    global games  # get full access to global variable games
+    game_type = data.get('game_type')
+
+    # Remove any non-number charater in received game_id
     game_id = Helper.get_game_id_from_raw_text(
-        data['game_id'], all_games=games)
-    if not game_id:
-        status = 'failed'
-        err_msg = 'Room does not exist!'
-        sio.emit('play_with_ai', {'status:': status,
-                                  'err_msg': err_msg}, room=sid)
-        return
-
-    game = Game(game_id)
-    game.type_opponent = 'ai'
-    game.create_new_game(sid, player_name)
-    game.create_new_game(ai_id, 'Your Computer')
-    sio.enter_room(sid, game_id)
-
-    games[game_id] = game
-
-
-@ sio.event
-def start_PvP_game(sid, data):
-    ''' Socket listener function
-    This function is used to create a new "player vs player"(PvP) game
-    After process data, emit a message to player's device.
-    Start the game if there are 2 players.
-    Input:
-        - sid: player's ID
-        - data['player_name']: player name
-        - data['is_host']: true/false, specify who create the room
-        - data['game_id']: unique game ID
-    '''
-    global games
+        data.get('game_id'))
     err_msg = ''
-    player_name = data['player_name']
-    is_host = data['is_host']
-
-    if not player_name:
-        player_name = 'Default'
-
-    # Get game ID from received data
-    game_id = Helper.get_game_id_from_raw_text(
-        data['game_id'], all_games=games)
 
     if not game_id:
-        # If game_id is not a number, raise error
-        status = 'failed'
         err_msg = 'Room does not exist!'
-
     else:
-        if is_host and games.get(game_id) is None:
-            # Create new game object when game ID is unique and there is a Host
-            games[game_id] = Game(game_id)
-
-        game = games[game_id]
-        if len(game.id_to_turn) > 1:
-            # If more than 2 players, raise error
-            status = 'failed'
-            err_msg = 'Room is full!'
-        else:
-            status = 'success'
-
-            ''' Create a new game with player name and turn
-                or update existing game with the second opponent'''
+        if game_type == 'ai':
+            player_name = 'Default'
+            game = Game(game_id)
+            game.type_opponent = 'ai'
             game.create_new_game(sid, player_name)
+            game.create_new_game(ai_id, 'Computer')
             sio.enter_room(sid, game_id)
 
-            if len(game.id_to_turn) == 2:
-                for id, turn in game.id_to_turn.items():
-                    sid_opponent = game.id_to_opponent[id]
-                    send_data = {'status:': status,
-                                 'is_turn': turn,
-                                 'opponent': game.id_to_name[sid_opponent]
-                                 }
-                    sio.emit('start_PvP_game', send_data, room=id)
+            games[game_id] = game
 
+        elif game_type == 'human':
+            player_name = data['player_name']
+            is_host = data['is_host']
+
+            # If there is no player name, create one
+            if not player_name:
+                player_name = 'Default'
+
+            # First player(host) will create new game object with an unique game ID
+            # this game object will be added to list all games variable
+            if is_host and games.get(game_id) is None:
+                games[game_id] = Game(game_id)
+
+            game = games[game_id]
+
+            # If room has more than 2 players, raise error
+            if len(game.id_to_turn) > 1:
+                err_msg = 'Room is full!'
+
+            #  Create or update current game with player name and turn
+            else:
+                # assign player's id with its name
+                game.create_new_game(sid, player_name)
+                sio.enter_room(sid, game_id)
+
+                # start game when we have 2 players
+                if len(game.id_to_turn) == 2:
+                    for id, turn in game.id_to_turn.items():
+                        sid_opponent = game.id_to_opponent[id]
+                        send_data = {'is_turn': turn,
+                                     'opponent_name': game.id_to_name[sid_opponent]
+                                     }
+                        # Send data to player's address to start game
+                        sio.emit('start_PvP_game', send_data, room=id)
+
+    # Send a message with information of error
+    # if there is an error in processing received data
     if err_msg:
-        sio.emit('start_PvP_game', {'status:': status,
-                                    'err_msg': err_msg}, room=sid)
+        sio.emit('start_PvP_game', {'err_msg': err_msg}, room=sid)
+
+
+'''
+Socket listener function
+Function used to process all moves happening in game (PvP or AI).
+Send move index to each player's device and end game if there is any winner.
+:param sid: address of the sender
+:param data: dict. Contain information:
+    - move_index: 1D-array indexed move
+    - game_id: unique game id
+'''
 
 
 @ sio.event
 def move(sid, data):
-    ''' Socket listener function
-    Function used to process all moves happening in game (PvP or Player vs AI).
-    Send move index to each player's device and end game if there is any winner.
-    Input:
-        - sid: player's ID
-        - data['move_index']: 1D-array indexed move
-        - data['game_id']: unique game ID
-    '''
     game_id, move_index_1D = int(data['game_id']), int(data['move_index'])
     is_winner = 0
     err_msg = ''
+    # Number of replied message sent to player
+    # when a message is received
     loop_counter = 1
+    # No game object can be found, send a error message
     if not games.get(game_id):
         err_msg = 'Something went wrong'
         sio.emit('move', err_msg, room=game_id)
     else:
         game = games[game_id]
+
         is_play_with_ai = game.type_opponent == 'ai'
+        # In AI mode, each move of player will received 2 message
+        # 1st msg is the current move and 2nd msg is AI's move
         if is_play_with_ai:
             loop_counter = 2
+
+        # variable decide the current move is "X" or "O"
         turn_of_current_move = game.id_to_turn[sid]
+
+        # Convert 1-D array indexed to 2-D array indexed
         move_index_2D = Helper.convert_index_to_2D(move_index_1D)
 
+        # Procees move to decide whether it is a valid move
         if game.process_move(sid, move_index_2D):
             while loop_counter > 0:
-                # Process move for PvP game
+                # Process move for 2 player
                 for id, turn in game.id_to_turn.items():
                     if turn < 2:
                         turn = 1 if game.current_turn == turn else 0
+                    #  Current turn is 2 when one player won
+                    #  stop process any other move
                     if game.current_turn == 2:
                         if id == game.winner_id:
                             is_winner = 1
@@ -199,34 +213,44 @@ def move(sid, data):
                                  'winning_line_index': game.winning_line_index,
                                  'turn_of_current_move': turn_of_current_move,
                                  'is_turn': turn}
+
+                    # Only send message via socketIO if the destination is player's ID
                     if id != ai_id:
                         sio.emit('move', send_data, room=id)
 
                 loop_counter -= 1
-
-                if is_play_with_ai and loop_counter > 0:
-                    # Generate next move for "vs AI" game
+                # Predict computer's next move in AI mode
+                if is_play_with_ai and loop_counter > 0 and game.current_turn < 2:
+                    # Generate next move using MiniMax with alpha beta pruning algorithm
                     next_move_index_2D = Helper.next_move_minimax(
                         game, move_index_2D)
-                    move_index_1D = Helper.convert_index_to_1D(
-                        next_move_index_2D)
-                    turn_of_current_move = game.id_to_turn[ai_id]
-                    if not game.process_move(ai_id, next_move_index_2D):
-                        print('something wrong')
+
+                    # Procees next AI's move to decide whether it is a valid move
+                    if game.process_move(ai_id, next_move_index_2D):
+                        # Convert predicted index to 1-D to displayed on web page
+                        move_index_1D = Helper.convert_index_to_1D(
+                            next_move_index_2D)
+                        # variable decide the current move is "X" or "O"
+                        turn_of_current_move = game.id_to_turn[ai_id]
+                    # Handle in case of invalid move
+                    else:
+                        pass
+
+
+'''
+Socket listener function
+Function used to request for a replay match
+:param sid: address of the sender
+:param data: dict. Contain information :
+    - game_id: unique game id
+'''
 
 
 @ sio.event
 def request_replay(sid, data):
-    ''' Socket listener function
-    Function used to request for a replay match of PvP game
-    Input:
-        - sid: player's ID
-        - data['game_id']: unique game ID
-    '''
-    global games
-
-    game_id = data['game_id']
-    game_id = int(re.sub("[^0-9]+", " ", game_id))
+    # Remove any non-number charater in received game_id
+    game_id = Helper.get_game_id_from_raw_text(
+        data.get('game_id'))
     status = err_msg = ''
 
     if not game_id:
@@ -252,15 +276,17 @@ def request_replay(sid, data):
                                     'err_msg': err_msg}, room=sid)
 
 
+'''
+Socket listener function
+Function used to create a replay match of PvP game
+:param sid: address of the sender
+:param data: dict. Contain information :
+    - game_id: unique game id
+'''
+
+
 @ sio.event
 def accept_replay(sid, data):
-    ''' Socket listener function
-    Function used to create a replay match of PvP game
-    Turn will be reversed.
-    Input:
-        - sid: player's ID
-        - data['game_id']: unique game ID
-    '''
     game_id = data['game_id']
     game_id = int(re.sub("[^0-9]+", " ", game_id))
     status = err_msg = ''
@@ -275,10 +301,11 @@ def accept_replay(sid, data):
     else:
         status = 'success'
         game = games[game_id]
+        # Reset game turn and game's matrix
         game.reset_game()
+
         # Reverse turn
         # Player 2 plays first instead of player 1
-
         for id_to_turn, player_turn in game.id_to_turn.items():
             turn = 0 if player_turn else 1
             game.id_to_turn[id_to_turn] = turn

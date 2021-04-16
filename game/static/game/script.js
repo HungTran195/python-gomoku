@@ -1,16 +1,12 @@
 'use strict';
 const socket = io.connect();
 
-const board = document.getElementById('board');
-const loader = document.querySelector('.loader');
-
 const overlay = document.querySelector('.overlay');
 const starting_box = document.getElementById('starting-box');
-const btn_start = document.querySelector('.btn-start');
 const turn_sign = document.getElementById('turn-sign');
 const allCells = document.querySelectorAll('.cell');
+const my_score = document.getElementById('score1');
 const score_opponent = document.getElementById('score2');
-
 
 let move_index, isturn, player_name = '', is_host;
 // Get game id from server
@@ -44,8 +40,8 @@ const get_room_url = function () {
 const game_id = get_room_url();
 
 // Initialise page with hidden tags
-const init = function (mode = '') {
-    if (mode === 'init') {
+const init = function (first_time_load) {
+    if (first_time_load) {
         overlay.classList.remove('hidden');
     }
     if (is_host) {
@@ -58,18 +54,15 @@ const init = function (mode = '') {
     document.getElementById('result-banner').classList.add('hidden');
     document.getElementById('replay-container').classList.add('hidden');
 }
-init('init');
+init(true);
 
 const play_with_ai = function () {
     document.getElementById('choose-game-type').classList.add('hidden');
     overlay.classList.add('hidden');
     isturn = 1;
     turn_sign.style.backgroundColor = '#77f077';
-    socket.emit('play_with_ai', { game_id: game_id });
+    socket.emit('start_game', { game_type: 'ai', game_id: game_id });
 }
-socket.on('play_with_ai', function (data) {
-
-});
 
 const play_with_human = function () {
     document.getElementById('choose-game-type').classList.add('hidden');
@@ -88,7 +81,7 @@ const start_PvP_game = function () {
             document.querySelector('.new-game-box').classList.remove('hidden');
         }
         document.getElementById('name-box').classList.add('hidden');
-        socket.emit('start_PvP_game', { game_id: game_id, player_name: player_name, is_host: is_host });
+        socket.emit('start_game', { game_type: 'human', game_id: game_id, player_name: player_name, is_host: is_host });
     }
 }
 // Incase user hit "Enter" key
@@ -113,7 +106,7 @@ socket.on('start_PvP_game', function (data) {
     else turn_sign.style.backgroundColor = '#9a9a9a';
 
     document.getElementById('player1').children[0].textContent = player_name;
-    document.getElementById('player2').children[0].textContent = data.opponent;
+    document.getElementById('player2').children[0].textContent = data.opponent_name;
     document.querySelector('.bottom-bar').classList.remove('hidden');
 
     overlay.classList.add('hidden');
@@ -136,16 +129,16 @@ const draw_winner = function (line, is_winner) {
         if (is_winner) {
             document.getElementById('result-banner').classList.remove('hidden');
             document.getElementById('result-banner').children[0].textContent = 'You Win!'
-            let score = document.getElementById('score1').children[0].textContent;
-            document.getElementById('score1').children[0].textContent = parseInt(score) + 1
+            let score = my_score.children[0].textContent;
+            my_score.children[0].textContent = parseInt(score) + 1
         }
 
         else {
             document.getElementById('result-banner').classList.remove('hidden');
             document.getElementById('result-banner').children[0].textContent = 'You Lose!'
 
-            let score = document.getElementById('score2').children[0].textContent;
-            document.getElementById('score2').children[0].textContent = parseInt(score) + 1
+            let score = score_opponent.children[0].textContent;
+            score_opponent.children[0].textContent = parseInt(score) + 1
         }
     }
     else {
@@ -195,19 +188,6 @@ socket.on('end_game', function (data) {
     overlay.classList.toggle('hidden');
 })
 
-
-
-// This function is used for user to create room 
-// and will be update in the future
-const update_room = function (data) {
-    if (data.status == 'success') {
-        room_message.textContent = 'Room is created';
-    }
-    else {
-        room_message.textContent = 'Room name is taken, please pick another one';
-    }
-}
-
 // The following code are used to handle "Play Again" request
 
 /* Function "request_replay": 
@@ -228,10 +208,6 @@ const accept_replay = function () {
     document.getElementById('wait-for-replay').classList.remove('hidden');
 };
 
-const reset_game = function () {
-    document.getElementById('replay-confirm').classList.add('hidden');
-}
-
 /* Socket listen on request_replay from server:
     -- render replay confirm box and send confirm msg to server */
 socket.on('request_replay', function (data) {
@@ -249,7 +225,7 @@ socket.on('replay', function (data) {
         }
         element.textContent = '';
     }
-    init();
+    init(false);
 
 
     isturn = data.is_turn;

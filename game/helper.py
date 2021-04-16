@@ -24,7 +24,7 @@ class Helper:
     def next_move_minimax(game, move_index):
         return generate_next_move(game, move_index)
 
-    def get_game_id_from_raw_text(game_id, all_games):
+    def get_game_id_from_raw_text(game_id):
         '''Get game id by removing special characters and verify that room exists'''
         # remove some special charaters used in referenced url
         game_id = re.sub(r"[?|#]+.*", "", game_id)
