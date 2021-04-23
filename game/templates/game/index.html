@@ -9,6 +9,7 @@
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.3/socket.io.min.js"></script>
     <link rel="stylesheet" type="text/css" href="{% static 'game/style.css' %}">
     <link rel="shortcut icon" type="image/png" href="{% static 'game/favicon.ico' %}" />
+    <script src="https://kit.fontawesome.com/da72a545a2.js" crossorigin="anonymous"></script>
 
     <title>Document</title>
 
@@ -17,126 +18,137 @@
 <body>
     <header id="header">
         <nav id="navbar" class="navbar">
-            <div id="logo">
-                <a href="{% url 'game:index' %}"><img src="{%static 'game/images/logo.png' %}"></a>
+            <div class="nav-container">
+
+                <div id="logo">
+                    <a href="{% url 'game:index' %}"><img src="{%static 'game/images/logo.png' %}"></a>
+                    <a href="{% url 'game:index' %}">
+                        <h1 class="title">Gomoku</h1>
+                    </a>
+
+                </div>
+                <div>
+                </div>
             </div>
-            <a href="{% url 'game:index' %}">
-                <h1 class="title">Gomoku</h1>
-            </a>
         </nav>
     </header>
     <main id="main">
         <div class="overlay"></div>
         <div class="background"></div>
-        <div class="game-field">
-            <div class="play-area">
-                <div class="lobby" id="lobby">
-                    <div class="float-box two-col" id="choose-game-type">
-                        <button class="btn btn-light btn-small margin-med" onclick="play_with_ai()">Play with
-                            AI</button>
-                        <button class="btn btn-light btn-small margin-med" onclick="play_with_human()">Play with
-                            friend</button>
-                    </div>
-                    <div class="float-box" id="starting-box">
-                        <div class="name-box" id="name-box">
-                            <input type="text" name="name" id="get-name-box" placeholder="Your Name">
-                            <button class="btn btn-light btn-start" onclick="start_PvP_game()">Start Game</button>
+        <div class="game-container">
+            <div class="game-field">
+                <div class="play-area">
+                    <div class="lobby" id="lobby">
+                        <div class="float-box two-col" id="choose-game-type">
+                            <button class="btn btn-light btn-small margin-med" onclick="play_with_ai()">Play with
+                                AI</button>
+                            <button class="btn btn-light btn-small margin-med" onclick="play_with_human()">Play with
+                                friend</button>
                         </div>
-                        <div class="new-game-box hidden ">
-                            <div>
-                                <p id="welcome-msg">Hello </p>
-                                <p>Here is your room, just share it to your friend!</p>
-                                <p><a id="room_url" href="{{room_url}}">{{room_url}}</a> </p>
+                        <div class="float-box" id="starting-box">
+                            <div class="name-box" id="name-box">
+                                <input type="text" name="name" id="get-name-box" placeholder="Your Name">
+                                <button class="btn btn-light btn-start" onclick="start_PvP_game()">Start Game</button>
                             </div>
-                            <div>
-                                <p> Waiting for your friend...</p>
-                                <div class="loader">
-                                    <div class=" spinning"></div>
+                            <div class="new-game-box hidden ">
+                                <div>
+                                    <p id="welcome-msg">Hello </p>
+                                    <p>Here is your room, just share it to your friend!</p>
+                                    <p><a id="room_url" href="{{room_url}}">{{room_url}}</a> </p>
+                                </div>
+                                <div>
+                                    <p> Waiting for your friend...</p>
+                                    <div class="loader">
+                                        <div class=" spinning"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-
-                    </div>
-                    <div class="hidden error float-box">
-                        <p id="error_msg"></p>
-                        <div>
-                            <a class="btn btn-light" href="{{host}}">New Game</a>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="board" id="board">
-                    <div class="turn">
-                        <div class="turn-sign" id="turn-sign"></div>
-                        <p>Your Turn</p>
-                    </div>
-                    <div class="replay-container" id="replay-container">
-                        <div class="replay-btn" id="replay-request">
-                            <button class="btn btn-dark" onclick="request_replay()">Play Again</button>
-                        </div>
-                        <div class="float-box" id="wait-for-replay">
-                            <p> Waiting for your friend...</p>
-                            <div class=" loader">
-                                <div class=" spinning"></div>
+                        <div class="hidden error float-box">
+                            <p id="error_msg"></p>
+                            <div>
+                                <a class="btn btn-light" href="{{host}}">New Game</a>
                             </div>
                         </div>
-                        <div class="replay-confirm" id="replay-confirm">
-                            <p>Your friend is challenging for a new game</p>
-                            <button class="btn btn-light" onclick="accept_replay()">Accept</button>
+                    </div>
+
+                    <div class="board" id="board">
+                        <div class="turn">
+                            <div class="turn-sign" id="turn-sign"></div>
+                            <p>Your Turn</p>
+                        </div>
+                        <div class="replay-container" id="replay-container">
+                            <div class="replay-btn" id="replay-request">
+                                <button class="btn btn-dark" onclick="request_replay()">Play Again</button>
+                            </div>
+                            <div class="float-box" id="wait-for-replay">
+                                <p> Waiting for your friend...</p>
+                                <div class=" loader">
+                                    <div class=" spinning"></div>
+                                </div>
+                            </div>
+                            <div class="replay-confirm" id="replay-confirm">
+                                <p>Your friend is challenging for a new game</p>
+                                <button class="btn btn-light" onclick="accept_replay()">Accept</button>
+                            </div>
+
+                        </div>
+                        <div>
+                            <div class="result-banner" id="result-banner">
+                                <p>123</p>
+                            </div>
+                        </div>
+                        <div class="play-board" id="play-board">
+                            {% for index in board_index %}
+                            <div class="cell" id="{{index}}"></div>
+                            {%endfor%}
                         </div>
 
                     </div>
-                    <div>
-                        <div class="result-banner" id="result-banner">
-                            <p>123</p>
+
+
+                </div>
+                <div class="bottom-bar hidden">
+                    <div class="stat-bar">
+                        <div class="img-player" id="img-player1">
+                            <img src="{% static 'game/images/chicken1.png' %}" alt="">
                         </div>
-                    </div>
-                    <div class="play-board" id="play-board">
-                        {% for index in board_index %}
-                        <div class="cell" id="{{index}}"></div>
-                        {%endfor%}
-                    </div>
 
-                </div>
-            </div>
-            <div class="bottom-bar hidden">
-                <div class="stat-bar">
-                    <div class="img-player" id="img-player1">
-                        <img src="{% static 'game/images/chicken1.png' %}" alt="">
-                    </div>
+                        <div class="player" id="player1">
+                            <p>Tony Stark</p>
+                        </div>
+                        <div class="score" id="score1">
+                            <p>0</p>
+                        </div>
 
-                    <div class="player" id="player1">
-                        <p>Tony Stark</p>
-                    </div>
-                    <div class="score" id="score1">
-                        <p>0</p>
-                    </div>
+                        <div class="img-player" id="img-player2">
+                            <img src="{% static 'game/images/chicken1.png' %}" alt="">
+                        </div>
 
-                    <div class="img-player" id="img-player2">
-                        <img src="{% static 'game/images/chicken1.png' %}" alt="">
-                    </div>
+                        <div class="player" id="player2">
+                            <p>Bruce Wayne</p>
+                        </div>
+                        <div class="score" id="score2">
+                            <p>0</p>
+                        </div>
 
-                    <div class="player" id="player2">
-                        <p>Bruce Wayne</p>
                     </div>
-                    <div class="score" id="score2">
-                        <p>0</p>
-                    </div>
-
                 </div>
             </div>
         </div>
+        <div class="chat-container">
+            <div class="chat-area" id="chat-area">
 
-
-        <div class="chat-field hidden" id="chat-field">
-            <div>
-                <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Saepe, iusto, veritatis praesentium vitae
-                    sed ipsam suscipit molestiae aspernatur aliquam odit necessitatibus ipsa cupiditate. Ratione fugit
-                    quidem, ducimus nam natus dicta.
             </div>
-            </p>
+            <div class="chat-input" id="chat-input">
+                <input type="text" name="chat-box" id="chat-box" placeholder="Send message">
+                <button class="btn btn-light btn-chat" onclick="send_msg()"><i class="fas fa-paper-plane"></i></button>
+            </div>
+
         </div>
+
+
     </main>
 
     <script src="{% static 'game/script.js' %}"></script>

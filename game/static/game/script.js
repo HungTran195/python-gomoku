@@ -7,6 +7,8 @@ const turn_sign = document.getElementById('turn-sign');
 const allCells = document.querySelectorAll('.cell');
 const my_score = document.getElementById('score1');
 const score_opponent = document.getElementById('score2');
+const chat_box = document.getElementById('chat-box');
+const chat_area = document.getElementById('chat-area');
 
 let move_index, isturn, player_name = '', is_host;
 // Get game id from server
@@ -43,6 +45,7 @@ const game_id = get_room_url();
 const init = function (first_time_load) {
     if (first_time_load) {
         overlay.classList.remove('hidden');
+        document.querySelector('.chat-container').classList.add('hidden');
     }
     if (is_host) {
         starting_box.classList.add('hidden');
@@ -55,10 +58,18 @@ const init = function (first_time_load) {
     document.getElementById('replay-container').classList.add('hidden');
 }
 init(true);
+const hide_tags_to_start_game = function (mode = '') {
+    if (mode == 'ai') {
+        document.getElementById('choose-game-type').classList.add('hidden');
+    }
+    overlay.classList.add('hidden');
+    starting_box.classList.add('hidden');
+    // document.getElementById('lobby').classList.add('hidden');
+
+}
 
 const play_with_ai = function () {
-    document.getElementById('choose-game-type').classList.add('hidden');
-    overlay.classList.add('hidden');
+    hide_tags_to_start_game('ai');
     isturn = 1;
     turn_sign.style.backgroundColor = '#77f077';
     socket.emit('start_game', { game_type: 'ai', game_id: game_id });
@@ -81,9 +92,11 @@ const start_PvP_game = function () {
             document.querySelector('.new-game-box').classList.remove('hidden');
         }
         document.getElementById('name-box').classList.add('hidden');
+
         socket.emit('start_game', { game_type: 'human', game_id: game_id, player_name: player_name, is_host: is_host });
     }
 }
+
 // Incase user hit "Enter" key
 // Call start_PvP_game function and continue
 document.getElementById('get-name-box').addEventListener('keydown', (e) => {
@@ -98,22 +111,61 @@ socket.on('start_PvP_game', function (data) {
     // Room is full or Wrong room id or Room is closed
     if (data.err_msg) {
         document.querySelector('.error').classList.remove('hidden');
+        // overlay.classList.remove('hidden');
         $('#error_msg').append(data.err_msg + '<br>');
     }
-    isturn = data.is_turn;
+    else {
 
-    if (isturn) turn_sign.style.backgroundColor = '#77f077';
-    else turn_sign.style.backgroundColor = '#9a9a9a';
+        isturn = data.is_turn;
 
-    document.getElementById('player1').children[0].textContent = player_name;
-    document.getElementById('player2').children[0].textContent = data.opponent_name;
-    document.querySelector('.bottom-bar').classList.remove('hidden');
+        if (isturn) turn_sign.style.backgroundColor = '#77f077';
+        else turn_sign.style.backgroundColor = '#9a9a9a';
 
-    overlay.classList.add('hidden');
-    starting_box.classList.add('hidden');
+        document.getElementById('player1').children[0].textContent = player_name;
+        document.getElementById('player2').children[0].textContent = data.opponent_name;
+        document.querySelector('.bottom-bar').classList.remove('hidden');
+        document.querySelector('.chat-container').classList.remove('hidden');
+
+        hide_tags_to_start_game();
+    }
 
 });
 
+const send_msg = function () {
+    let chat_msg = chat_box.value;
+    if (chat_msg) {
+        socket.emit('send_msg', { game_id: game_id, chat_msg: chat_msg });
+        const markup = `
+            <div class="chat-msg-P2">
+                <div></div>
+                <p>${chat_msg}</p>
+            </div>
+            `;
+        chat_area.insertAdjacentHTML('beforeend', markup);
+        chat_area.scrollTop = chat_area.scrollHeight;
+        chat_box.value = '';
+    }
+}
+
+chat_box.addEventListener('keydown', (e) => {
+    if (e.key == 'Enter') {
+        send_msg();
+    }
+});
+
+socket.on('new_msg', function (data) {
+    let chat_msg = data.chat_msg;
+    if (chat_msg) {
+
+        const markup = `
+            <div class="chat-msg-P1">
+                <p>${chat_msg}</p>
+            </div>
+            `;
+        chat_area.insertAdjacentHTML('beforeend', markup);
+        chat_area.scrollTop = chat_area.scrollHeight;
+    }
+});
 
 
 // Change color of winning nodes
@@ -162,7 +214,6 @@ const updateMove = function (turn_of_current_move, move_index) {
 // get message from server
 socket.on('move', function (data) {
     // $('#log').append('<br>Received: ' + msg.data); 
-    console.log(data)
     if ('err_msg' in data) {
         document.querySelector('.error').classList.remove('hidden');
         $('#error_msg').append(data.err_msg + '<br>');

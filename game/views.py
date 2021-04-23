@@ -18,12 +18,11 @@ ai_id = 'ai0'
 # Store all current games
 games = {}
 
-'''
-Main view when someone visit webpage
-'''
-
 
 def index(request):
+    '''
+    Main view when someone visit webpage
+    '''
     global games  # get full access to global variable games
 
     # variable to decide how many game ids have been used
@@ -52,12 +51,11 @@ def index(request):
     return HttpResponse(render(request, 'game/index.html', context))
 
 
-'''
-Invited view for guest, used in PvP mode
-'''
-
-
 def invited_game(request, game_id):
+    '''
+    Invited view for guest, used in PvP mode
+    '''
+
     global games  # get full access to global variable games
     player_name = ''
 
@@ -78,20 +76,18 @@ def invited_game(request, game_id):
     return HttpResponse(render(request, 'game/invited.html', context))
 
 
-'''
-Socket listener function
-Handle start game event for PvP mode or AI mode
-:param sid: player's ID
-:param data: dict. Contain informatione:
-    - game_type: 'ai' or 'human'
-    - game_id: unique game id
-    - player_name: player's nick name (in PvP mode)
-    - is_host: true/false. Decide who created the room and has 1st turn (in PvP mode)
-'''
-
-
 @sio.event
 def start_game(sid, data):
+    '''
+    Socket listener function
+    Handle start game event for PvP mode or AI mode
+    :param sid: player's ID
+    :param data: dict. Contain informatione:
+        - game_type: 'ai' or 'human'
+        - game_id: unique game id
+        - player_name: player's nick name (in PvP mode)
+        - is_host: true/false. Decide who created the room and has 1st turn (in PvP mode)
+    '''
     global games  # get full access to global variable games
     game_type = data.get('game_type')
 
@@ -126,10 +122,15 @@ def start_game(sid, data):
             if is_host and games.get(game_id) is None:
                 games[game_id] = Game(game_id)
 
-            game = games[game_id]
+            game = games.get(game_id)
+
+            # If one player left room, that room will be delete
+            # if they try to access the room again, raise
+            if not game:
+                err_msg = 'Room does not exist!'
 
             # If room has more than 2 players, raise error
-            if len(game.id_to_turn) > 1:
+            elif len(game.id_to_turn) > 1:
                 err_msg = 'Room is full!'
 
             #  Create or update current game with player name and turn
@@ -154,19 +155,37 @@ def start_game(sid, data):
         sio.emit('start_PvP_game', {'err_msg': err_msg}, room=sid)
 
 
-'''
-Socket listener function
-Function used to process all moves happening in game (PvP or AI).
-Send move index to each player's device and end game if there is any winner.
-:param sid: address of the sender
-:param data: dict. Contain information:
-    - move_index: 1D-array indexed move
-    - game_id: unique game id
-'''
+@sio.event
+def send_msg(sid, data):
+    '''
+    Get message from one player and send it to the other player
+    :param sid: address of the sender
+    :param data: dict. Contain information:
+        - game_id: unique game id
+        - chat_msg: string. Message of sender
+    :Return: None
+    '''
+    chat_msg = data.get('chat_msg')
+    if chat_msg:
+        game = games.get(int(data['game_id']))
+        if game:
+            opponent_id = game.id_to_opponent.get(sid)
+            if opponent_id:
+                sio.emit(
+                    'new_msg', {'chat_msg': chat_msg}, room=opponent_id)
 
 
 @ sio.event
 def move(sid, data):
+    '''
+    Socket listener function
+    Function used to process all moves happening in game (PvP or AI).
+    Send move index to each player's device and end game if there is any winner.
+    :param sid: address of the sender
+    :param data: dict. Contain information:
+        - move_index: 1D-array indexed move
+        - game_id: unique game id
+    '''
     game_id, move_index_1D = int(data['game_id']), int(data['move_index'])
     is_winner = 0
     err_msg = ''
@@ -237,17 +256,15 @@ def move(sid, data):
                         pass
 
 
-'''
-Socket listener function
-Function used to request for a replay match
-:param sid: address of the sender
-:param data: dict. Contain information :
-    - game_id: unique game id
-'''
-
-
 @ sio.event
 def request_replay(sid, data):
+    '''
+    Socket listener function
+    Function used to request for a replay match
+    :param sid: address of the sender
+    :param data: dict. Contain information :
+        - game_id: unique game id
+    '''
     # Remove any non-number charater in received game_id
     game_id = Helper.get_game_id_from_raw_text(
         data.get('game_id'))
@@ -276,17 +293,15 @@ def request_replay(sid, data):
                                     'err_msg': err_msg}, room=sid)
 
 
-'''
-Socket listener function
-Function used to create a replay match of PvP game
-:param sid: address of the sender
-:param data: dict. Contain information :
-    - game_id: unique game id
-'''
-
-
 @ sio.event
 def accept_replay(sid, data):
+    '''
+    Socket listener function
+    Function used to create a replay match of PvP game
+    :param sid: address of the sender
+    :param data: dict. Contain information :
+        - game_id: unique game id
+    '''
     game_id = data['game_id']
     game_id = int(re.sub("[^0-9]+", " ", game_id))
     status = err_msg = ''
