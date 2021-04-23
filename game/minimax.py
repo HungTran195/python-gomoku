@@ -106,52 +106,35 @@ class MiniMax:
 
         return score
 
-    def score_moves_of_player(self, board, move_taken, is_ai):
-        '''
-        Score the moves of human or ai at the current game state
-        :param board: matrix represent the current board state
-        :param move_taken: list that contain move taken by ai and human 
-        :param is_ai: true AI's turn, false - human's turn
-        :return: int
-        '''
-        target = 1 if is_ai else 2
-        defense = 2 if is_ai else 1
-        total_score = 0
-
-        for move in move_taken:
-            row, col = move
-            if board[row][col] == target:
-                # Count the number of connected node
-                score = self.count_and_score_connected(
-                    board, row, col, target)
-                # Incase the move is to defense (block other's move from either side)
-                # Count the number of nodes that are blocked
-                # Move that block more nodes generates higher score
-                score_defense = self.count_and_score_connected(
-                    board, row, col, defense)
-
-                # Final score is the sum of all scores in 4 directions
-                total_score += score + score_defense
-        return total_score
-
-    def score_move_taken(self, current_board, move_taken):
+    def score_move_taken(self, current_board, move_taken, is_ai):
         '''
         Score the current game state created by predicted move
         :param current_board: matrix represent the current board state
         :param move_taken: list that contain move taken by ai and human 
-        :return: float
+        :param is_ai: true AI's turn, false - human's turn
+
+        :return: int
         '''
-        human_score = self.score_moves_of_player(
-            current_board, move_taken, is_ai=False)
-        ai_score = self.score_moves_of_player(
-            current_board, move_taken, is_ai=True)
+        target = 1 if is_ai else 2
+        defense = 2 if is_ai else 1
 
-        if human_score == 0:
-            human_score = 1
+        total_score = 0
 
-        score = (ai_score / human_score)*1000
+        for move in move_taken:
+            row, col = move
+            if current_board[row][col] == target:
+                # Count the number of connected node
+                score = self.count_and_score_connected(
+                    current_board, row, col, target)
+                # Incase the move is to defense (block other's move from either side)
+                # Count the number of nodes that are blocked
+                # Move that block more nodes generates higher score
+                score_defense = self.count_and_score_connected(
+                    current_board, row, col, defense)
 
-        return score
+                # Final score is the sum of all scores in 4 directions
+                total_score += score + score_defense
+        return total_score
 
     def get_available_indexes(self, current_board):
         '''
@@ -181,7 +164,8 @@ class MiniMax:
         :return: list type
         '''
         if depth == self.LIMIT_DEPTH:
-            score = self.score_move_taken(current_board, move_taken)
+            score = self.score_move_taken(
+                current_board, move_taken, is_ai=True)
             return score, move_index
         best_move = None
         row, col = move_index
