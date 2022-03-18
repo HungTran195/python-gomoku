@@ -3,7 +3,7 @@ bidict==0.21.4
 dj-database-url==0.5.0
 Django==4.0.3
 django-heroku==0.3.1
-dnspython==2.2.1
+dnspython==1.16.0
 eventlet==0.30.2
 greenlet==1.1.2
 gunicorn==20.1.0
