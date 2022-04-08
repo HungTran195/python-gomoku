@@ -1,8 +1,5 @@
-from ctypes.wintypes import WIN32_FIND_DATAA
 from random import random
-
-from .minimax import *
-import re
+from .minimax import generate_next_move
 from django.conf import settings
 
 NUMBER_OF_ROW=settings.NUMBER_OF_ROW
