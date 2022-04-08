@@ -1,4 +1,3 @@
-from django.http.response import HttpResponseNotFound
 from django.http import HttpResponse
 from django.shortcuts import render
 from .helper import Helper
@@ -19,8 +18,6 @@ REMATCH_ACCEPT_COMMAND = 'accept'
 REMATCH_START_COMMAND = 'start_rematch'
 
 AI_ID=settings.AI_ID
-
-HOST = settings.SERVER
 
 # Used for game sync and user communication
 sio = socketio.Server(async_mode=settings.ASYNC_MODE)
@@ -182,17 +179,45 @@ def move(sid, data):
         game = games[game_id]
         move_index = data['moveIndex']
         if game.game_type == GAME_TYPE_SINGLE:
-            # AI mode
-            data = Helper.play_with_ai(game,player_id,move_index)
-            if data['status'] == 'success':
-            
-                sio.emit('move', data,room=player_id)
-            else:
-                error_msg = data['msg']
-        else:
+            # Single player mode
             if game.process_move(player_id, move_index):
+                # Check if player's move is valid and decide whether it is a winning move
                 if game.game_over:
-                    # variable store the player index which is the winner
+                    data = {
+                        'status': 'success',
+                        'game_over': True,
+                        'winner': 1 if game.winning_line != [] else 0,
+                        'winning_line': game.winning_line,
+                        'move_index': [],
+                    }
+                else:
+                    # Calculate next move of AI
+                    move_index = Helper.next_move_minimax(game, move_index)
+                    game.process_move(AI_ID, move_index)
+                    if game.game_over:
+                        # AI won
+                        data = {
+                            'status': 'success',
+                            'game_over': True,
+                            'winner': 2,
+                            'winning_line': game.winning_line,
+                            'move_index': move_index,
+                        }
+                    else:
+                        data = {
+                            'status': 'success',
+                            'game_over': False,
+                            'your_turn': True,
+                            'move_index': move_index,
+                        }
+                sio.emit('move', data,room=player_id)
+            else: 
+                error_msg = 'Invalid Move'
+        else:
+            # PvP mode
+            if game.process_move(player_id, move_index):
+                # Check if player's move is valid and decide whether it is a winning move
+                if game.game_over:
                     winner_index = game.get_player_index(player_id) 
                     data = {
                         'status': 'success',
@@ -213,7 +238,6 @@ def move(sid, data):
                     sio.emit('move', data, opponent_id)
             else: 
                 error_msg = 'Invalid Move'
-    
     if error_msg:
         data= {
             'status': 'failed',
@@ -311,5 +335,6 @@ def disconnect(sid):
     for game_id, game in games.items():
         if game.player_index.get(sid) is not None:
             games.pop(game_id)
+            del game
             sio.emit('end_game','', room=game_id)
             break

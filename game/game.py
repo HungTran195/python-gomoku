@@ -78,12 +78,11 @@ class Game:
         @return: Bool
         """
         if self.get_player_index(player_id) == self.current_turn \
-            and self.is_valid_move(move_index):
+            and self.is_valid_move(move_index) and not self.game_over:
             row, col = move_index
             move_value = self.get_player_index(player_id)
             self.number_of_moves += 1
             self.game_board[row][col] = move_value
-            print(f'processing {player_id} {move_value} {move_index}')
             if self.is_winning_move(row, col, move_value):
                 self.game_over = True
 

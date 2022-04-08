@@ -1,5 +1,5 @@
 """
-ASGI config for caro_game project.
+ASGI config for python-gomoku project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 
@@ -11,6 +11,6 @@ import os
 
 from django.core.asgi import get_asgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'caro_game.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'python-gomoku.settings')
 
 application = get_asgi_application()

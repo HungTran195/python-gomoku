@@ -1,5 +1,3 @@
-# import logging
-# logging.basicConfig(filename='minimax.log', level=logging.DEBUG)
 from django.conf import settings
 
 NUMBER_OF_ROW=settings.NUMBER_OF_ROW
