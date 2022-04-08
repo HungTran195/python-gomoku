@@ -25,5 +25,5 @@ application = socketio.WSGIApp(sio, django_app)
 These lines of code is used to enable eventlet module on port 8000
 and only used for local developement
 """
-# import eventlet
-# eventlet.wsgi.server(eventlet.listen(('', 8000)), application)
+import eventlet
+eventlet.wsgi.server(eventlet.listen(('', 8000)), application)

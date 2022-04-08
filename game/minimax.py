@@ -1,7 +1,9 @@
-from .config import Config
 # import logging
 # logging.basicConfig(filename='minimax.log', level=logging.DEBUG)
+from django.conf import settings
 
+NUMBER_OF_ROW=settings.NUMBER_OF_ROW
+NUMBER_OF_COL=settings.NUMBER_OF_COL
 
 class MiniMax:
     '''
@@ -20,7 +22,7 @@ class MiniMax:
         :param y: column index
         Return true/false
         '''
-        if x >= 0 and y >= 0 and x < Config.NUM_ROW and y < Config.NUM_COL:
+        if x >= 0 and y >= 0 and x < NUMBER_OF_ROW and y < NUMBER_OF_COL:
             return True
         return False
 
@@ -51,7 +53,7 @@ class MiniMax:
         if count == 3:
             return 100
         if count == 4:
-            return 10000
+            return 1000
         if count == 5:
             return 100000
         return count*count
@@ -86,7 +88,11 @@ class MiniMax:
                 coeff_x, coeff_y = coeffs
                 # reset co-ordinate (x, y) to starting point
                 x, y = row + coeff_x, col + coeff_y
-
+                # if the current node belongs to other's player, this connected line is blocked
+                # then it is not valuable as other none blocked line
+                if self.is_playable(x, y) and board[x][y] != 0 and board[x][y] != target:
+                    # count -= 1
+                    continue
                 # while it's not winning move and neither of x and y index is available
                 # loop through one side of the direction and count the connected nodes
                 while self.is_available_index(board, x, y, target):
@@ -98,10 +104,7 @@ class MiniMax:
                     # no need to check for any other possible moves
                     if count == 5:
                         return self.get_score_from_count(count)
-                # if the current node belongs to other's player, this connected line is blocked
-                # then it is not valuable as other none blocked line
-                if self.is_playable(x, y) and board[x][y] != 0 and board[x][y] != target:
-                    count -= 1
+                
             score += self.get_score_from_count(count)
 
         return score
@@ -115,8 +118,8 @@ class MiniMax:
 
         :return: int
         '''
-        target = 1 if is_ai else 2
-        defense = 2 if is_ai else 1
+        target = 2 if is_ai else 1
+        defense = 1 if is_ai else 2
 
         total_score = 0
 
@@ -144,8 +147,8 @@ class MiniMax:
         :return: set of all available moves
         '''
         possible_moves = set()
-        for row in range(Config.NUM_ROW):
-            for col in range(Config.NUM_COL):
+        for row in range(NUMBER_OF_ROW):
+            for col in range(NUMBER_OF_COL):
                 if current_board[row][col] != 0:
                     for i in (-1, 0,  1):
                         for j in (-1, 0, 1):
@@ -170,7 +173,7 @@ class MiniMax:
         best_move = None
         row, col = move_index
 
-        current_board[row][col] = len(move_taken) % 2 + 1
+        current_board[row][col] = 2 if is_max_player else 1
         all_possible_moves = self.get_available_indexes(current_board)
 
         # Use max score when it is AI's turn
@@ -229,11 +232,12 @@ class MiniMax:
 
 
 def generate_next_move(game, move_index_2D):
-    play_board = [[0 for _ in range(Config.NUM_COL)]
-                  for _ in range(Config.NUM_ROW)]
-    for row in range(Config.NUM_ROW):
-        for col in range(Config.NUM_COL):
-            play_board[row][col] = game.play_board[row][col]
+    play_board = [[0 for _ in range(NUMBER_OF_COL)]
+                  for _ in range(NUMBER_OF_ROW)]
+    for row in range(NUMBER_OF_ROW):
+        for col in range(NUMBER_OF_COL):
+            play_board[row][col] = game.game_board[row][col]
+
     solver = MiniMax(play_board)
     next_move = solver.calculate_next_move(move_index_2D)
     return next_move

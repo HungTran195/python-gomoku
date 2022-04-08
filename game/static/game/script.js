@@ -1,314 +1,461 @@
 'use strict';
-const socket = io.connect();
+const socket = io().connect();
+const greetingCard = $('#greeting-card');
+const greetingContent = $('#greeting-content');
+const gameBoard = document.getElementById("game-board");
 
-const overlay = document.querySelector('.overlay');
-const starting_box = document.getElementById('starting-box');
-const turn_sign = document.getElementById('turn-sign');
-const allCells = document.querySelectorAll('.cell');
-const my_score = document.getElementById('score1');
-const score_opponent = document.getElementById('score2');
-const chat_box = document.getElementById('chat-box');
-const chat_area = document.getElementById('chat-area');
-const result_banner = document.getElementById('result-banner');
-const replay_request = document.getElementById('replay-request');
-const replay_confirm = document.getElementById('replay-confirm');
-const wait_for_replay = document.getElementById('wait-for-replay');
+const REMATCH_REQUEST_COMMAND = 'request';
+const REMATCH_ACCEPT_COMMAND = 'accept';
+const REMATCH_START_COMMAND = 'start_rematch';
 
-let move_index, isturn, player_name = '';
+const GAME_TYPE_SINGLE='single';
+const GAME_TYPE_PVP='pvp';
 
-// Get game id from server
-const get_room_url = function () {
-    let room_url = document.getElementById('room_url');
-    let game_id, is_host;
-    if (room_url) {
-        room_url = room_url.textContent.split('/');
-        if (room_url.length > 3) {
-            game_id = room_url[room_url.length - 1].toString();
-            is_host = 1;
-        }
-        else {
-            game_id = '';
-        }
-    }
-    // In case joined by invited linked, use URL to get game id
-    else {
-        let current_page = window.location.href;
-        current_page = current_page.split('/');
-        if (current_page.length > 3) {
-            game_id = current_page[current_page.length - 1].toString();
-            is_host = 0;
-        }
-    }
-    if (!game_id) {
-        alert('There are no available room, please try again later');
-    }
-    return [game_id, is_host];
+const initialState = {
+    gameID: 0,
+    gameType: '',
+    playerIndex: 0,
+    playerName: '',
+    opponentName: '',
+    isTurn: true,
+    score: [0, 0],
+    lastMoveIndex: [],
 };
-const [game_id, is_host] = get_room_url();
 
-// Initialise page with hidden tags
-const init = function (first_time_load) {
-    if (first_time_load) {
-        overlay.classList.remove('hidden');
-        document.querySelector('.chat-container').classList.add('hidden');
-    }
-    if (is_host) {
-        starting_box.classList.add('hidden');
-    }
-    replay_request.classList.remove('hidden');
-    result_banner.classList.add('hidden');
-    replay_confirm.classList.add('hidden');
-    wait_for_replay.classList.add('hidden');
-    document.querySelector('.new-game-box').classList.add('hidden');
-    document.getElementById('replay-container').classList.add('hidden');
-}
-init(true);
+const state = initialState;
 
-const hide_tags_and_start_game = function (mode = '') {
-    if (mode == 'ai') {
-        document.getElementById('choose-game-type').classList.add('hidden');
-    }
-    overlay.classList.add('hidden');
-    starting_box.classList.add('hidden');
-}
+const showGreetingCard = () =>{
+    greetingCard.removeClass('hidden');
+} 
 
-const play_with_ai = function () {
-    hide_tags_and_start_game('ai');
-    isturn = 1;
-    turn_sign.style.backgroundColor = '#77f077';
-    socket.emit('start_game', { game_type: 'ai', game_id: game_id });
-}
+const hideGreetingCard =() =>{
+    greetingCard.addClass('hidden');
+};
 
-const play_with_human = function () {
-    document.getElementById('choose-game-type').classList.add('hidden');
-    starting_box.classList.remove('hidden');
-}
-
-// Get typed name 
-// Send game infor to server and wait for other player to join game
-const start_PvP_game = function () {
-    player_name = document.getElementById("get-name-box").value;
-    if (player_name) {
-        if (is_host) {
-            let msg = document.getElementById("welcome-msg").textContent;
-            msg = msg + player_name + ',';
-            document.getElementById("welcome-msg").textContent = msg
-            document.querySelector('.new-game-box').classList.remove('hidden');
-        }
-        document.getElementById('name-box').classList.add('hidden');
-
-        socket.emit('start_game', { game_type: 'human', game_id: game_id, player_name: player_name, is_host: is_host });
-    }
-}
-
-// Incase user hit "Enter" key
-// Call start_PvP_game function and continue
-document.getElementById('get-name-box').addEventListener('keydown', (e) => {
-    if (e.key == 'Enter') {
-        start_PvP_game();
-    }
-})
-
-
-
-const send_msg = function () {
-    let chat_msg = chat_box.value;
-    if (chat_msg) {
-        socket.emit('send_msg', { game_id: game_id, chat_msg: chat_msg });
-        const markup = `
-            <div class="chat-msg-P2">
-                <div></div>
-                <p>${chat_msg}</p>
+const displayLoadingCard = (extra_context='') =>{
+    const markup = `
+        <div class=" greeting-wrapper p-3 w-100">
+            <div class="fs-3 text-warning text-center">
+                ${extra_context ?? `
+                    <p>
+                    ${extra_context}
+                    </p>
+                `}
+                <p>
+                    Waiting for the response
+                </p>
+                <div class="spinner-grow text-light loader" role="status"></div>
             </div>
-            `;
-        chat_area.insertAdjacentHTML('beforeend', markup);
-        chat_area.scrollTop = chat_area.scrollHeight;
-        chat_box.value = '';
-    }
+        </div>
+    `;
+    greetingContent.empty().append(markup);
+    showGreetingCard();
 }
 
-chat_box.addEventListener('keydown', (e) => {
-    if (e.key == 'Enter') {
-        send_msg();
+const removeColorOfLastMove = () =>{
+    $(`#cell-${state.lastMoveIndex[0]}-${state.lastMoveIndex[1]}`).removeClass('latest-index');
+};
+
+const resetBoard =() =>{
+    for(let node of $('.winning-index')){
+        node.removeChild(node.firstChild);
+    };
+
+    for(let node of $('.opponent-node')){
+        node.classList.add('node');
+        node.classList.remove('opponent-node', 'winning-index', 'latest-index');
+    };
+
+    for(let node of $('.my-node')){
+        node.classList.add('node');
+        node.classList.remove('my-node', 'winning-index', 'latest-index');
+    };
+};
+
+$('#start-form').submit( (event) =>{
+    event.preventDefault();
+    const gameType= $('#start-form input[name=game-type]:checked').val();
+    const playerName= $('#start-form input[name=player-name]').val();
+    hideGreetingCard();
+    resetBoard();
+
+    state.gameType = gameType;
+    state.playerName = playerName;
+    if(gameType === GAME_TYPE_PVP && $('#start-form input[name=join-game-btn]').is(':checked')){
+        // Join an active game
+        state.gameID = parseInt($('#start-form input[name=active-game-id]').val());
+        state.playerIndex = 2;
+        joinGame();
+    }
+    else{
+        // Create new game
+        state.gameID = parseInt($('#game-id').text())
+        state.playerIndex = 1;
+
+        initGame();
     }
 });
 
-
-// Check every game cells to decide 'move' by turn
-for (const element of allCells) {
-    element.addEventListener('click', () => {
-        if (!element.textContent & isturn) {
-            let box_id = element.id;
-            socket.emit('move', { game_id: game_id, move_index: box_id });
-        }
-    });
-}
-
-
-// Change color of winning nodes
-const draw_winning_line = function (line, is_winner) {
-    line.forEach(element => {
-        document.getElementById(`${element}`).classList.add('winner-nodes');
-    });
-}
-
-const draw_winner = function (line, is_winner) {
-    if (line.length !== 0) {
-        draw_winning_line(line, is_winner);
-        if (is_winner) {
-            result_banner.classList.remove('hidden');
-            result_banner.children[0].textContent = 'You Win!'
-            let score = my_score.children[0].textContent;
-            my_score.children[0].textContent = parseInt(score) + 1
-        }
-
-        else {
-            result_banner.classList.remove('hidden');
-            result_banner.children[0].textContent = 'You Lose!'
-
-            let score = score_opponent.children[0].textContent;
-            score_opponent.children[0].textContent = parseInt(score) + 1
-        }
+$('#start-form input[name=game-type]').on('change', ()=>{
+    if($('#start-form input[name=game-type]:checked').val() === 'single'){
+        $('#game-info-wrapper').addClass('opacity-50');
+        $('#join-game input').val('');
+        $('#join-game input').prop("disabled", true);
     }
     else {
-        result_banner.classList.remove('hidden');
-        result_banner.children[0].textContent = 'Game Draw!'
-
+        $('#game-info-wrapper').removeClass('opacity-50');
+        $('#join-game input').prop("disabled", false);
+        
     }
-    window.setTimeout(() => {
-        document.getElementById('replay-container').classList.remove('hidden')
-    }, 1000);
-}
-
-// Process received message from server to display move
-const updateMove = function (turn_of_current_move, move_index) {
-    let move = document.getElementById(move_index);
-    if (move) {
-        if (turn_of_current_move) move.textContent = 'X';
-        else move.textContent = 'O';
+});
+$('#start-form input[name=join-game-btn]').on('change', ()=>{
+    if($('#start-form input[name=join-game-btn]').is(':checked')){
+        $('#game-info').addClass('hidden');
+        $('#join-game').removeClass('hidden');
+        $('#join-game input').prop("required", true);
     }
-};
-
-
-/* Function "request_replay": 
-    -- send request to sever
-    -- wait for response from server*/
-const request_replay = function () {
-    socket.emit('request_replay', { game_id: game_id });
-    replay_request.classList.add('hidden');
-    wait_for_replay.classList.remove('hidden');
-};
-
-/* Fucntion "accept_replay": 
-    -- send "accept" response to severz
-    -- wait for server to create a new match */
-const accept_replay = function () {
-    socket.emit('accept_replay', { game_id: game_id });
-    replay_confirm.classList.add('hidden');
-    wait_for_replay.classList.remove('hidden');
-};
-
-
-const display_error = function (err_msg) {
-    init(false);
-    overlay.classList.remove('hidden');
-    document.querySelector('.error').classList.remove('hidden');
-    $('#error_msg').append(err_msg + '<br>');
-}
-
-
-// Handle received message from server to start game
-socket.on('start_PvP_game', function (data) {
-    // Display error message if:
-    // Room is full or Wrong room id or Room is closed
-    if (data.err_msg) {
-        display_error(data.err_msg);
+    else{
+        $('#game-info').removeClass('hidden');
+        $('#join-game').addClass('hidden');
+        $('#join-game input').prop("required", false);
     }
-    else {
-        isturn = data.is_turn;
-        if (isturn) turn_sign.style.backgroundColor = '#77f077';
-        else turn_sign.style.backgroundColor = '#9a9a9a';
-
-        document.getElementById('player1').children[0].textContent = player_name;
-        document.getElementById('player2').children[0].textContent = data.opponent_name;
-        document.querySelector('.bottom-bar').classList.remove('hidden');
-        document.querySelector('.chat-container').classList.remove('hidden');
-
-        hide_tags_and_start_game();
-    }
-
 });
 
+$('#invited-form').submit( (event) =>{
+    event.preventDefault();
+    const playerName= $('#invited-form input[name=player-name]').val();
+    state.playerName = playerName;
+    joinGame();
+    $('#invited-form')[0].reset();
+});
 
-socket.on('new_msg', function (data) {
-    let chat_msg = data.chat_msg;
-    if (chat_msg) {
+const addGameBoardHandler =()=>{
+    $('#game-board').on('click',(event)=>{
+        const target = event.target.id;
+        if (state.isTurn & target.includes("cell")){
+            if(event.target.classList.contains('node')){
+                // Get move index from ID. Example: cell-4-5 => move index: [4,5]
+                const moveIndex = [ parseInt(target.split('-')[1]),  parseInt(target.split('-')[2])]; 
+                sendMove(moveIndex);
+                updateBoard(moveIndex);
+                state.isTurn = false;
+                updateTurnStatus();
+            }
+        };
+    });
+};
 
-        const markup = `
-            <div class="chat-msg-P1">
-                <p>${chat_msg}</p>
+const rematch =() =>{
+    requestRematch();
+    $('#game-over-banner').addClass('hidden');
+};
+
+const gameOver = (data) =>{
+    if(data.winning_line){
+        const isWinner = data.winner === state.playerIndex ? true : false
+        displayWinningLine(data.winning_line);
+        updateScore(isWinner);
+        setTimeout(() => {
+            if(isWinner) {
+                $('#result').empty().append(`
+                    <span><i class="fas fa-trophy px-1"></i></span>
+                    You Won
+                    <span><i class="fas fa-trophy px-1"></i></span>
+                `);
+            }
+
+            else {
+                $('#result').empty().append(`
+                    <span><i class="fas fa-sad-tear px-1"></i></span>
+                    You Lost
+                    <span><i class="fas fa-sad-tear px-1"></i></span>
+                `)
+            };
+
+            $('#game-over-banner').removeClass('hidden');
+        }, 1000);
+    }
+    else{
+        // game tie
+        setTimeout(() => {
+            $('#result').empty().append(`
+                <span><i class="fas fa-smile-beam px-1"></i></i></span>
+                Game Tie
+                <span><i class="fas fa-smile-beam px-1"></i></i></span>
+            `)
+
+            $('#game-over-banner').removeClass('hidden');
+        }, 1000);
+    }
+};
+
+const updateBoard = (moveIndex)=>{
+    removeColorOfLastMove();
+
+    if (!(moveIndex[0] === state.lastMoveIndex[0]
+            && moveIndex[1] === state.lastMoveIndex[1])){
+        state.lastMoveIndex = moveIndex;
+        const cellID = `#cell-${moveIndex[0]}-${moveIndex[1]}`;
+        if(state.isTurn){
+            $(cellID).addClass('my-node latest-index');
+        }
+        else $(cellID).addClass('opponent-node latest-index');;
+        
+        $(cellID).removeClass('node');
+    }
+};
+
+const updateTurnStatus = ()=>{
+    if(state.isTurn) {
+        document.getElementById('turn-status').childNodes[1].textContent= 'Your Turn';
+        $('#turn-status').addClass('my-turn');
+        $('#turn-status').removeClass('opponent-turn');
+
+    }
+    else {
+        document.getElementById('turn-status').childNodes[1].textContent= 'Thinking...';
+        $('#turn-status').addClass('opponent-turn');
+        $('#turn-status').removeClass('my-turn');
+    }
+};
+
+const updateScore = (isWinner) =>{
+    if(isWinner){
+        state.score[0] ++;
+        $('#score-0').text(state.score[0]);
+    }
+    else{
+        state.score[1] ++;
+        $('#score-1').text(state.score[1]);
+    };
+};
+
+const displayWinningLine= (winningLine) =>{
+    for (let moveIndex of winningLine){
+        $(`#cell-${moveIndex[0]}-${moveIndex[1]}`).addClass('winning-index')
+        $(`#cell-${moveIndex[0]}-${moveIndex[1]}`).prepend('<i class="fas fa-star"></i>');
+    }
+};
+
+const initSinglePlayerGame = () =>{
+    $('#turn-status').removeClass('opacity-25');
+    updateTurnStatus(true)
+    const markup = `
+        <div class="d-flex justify-container-center align-items-center fs-4">
+            <div class="d-flex justify-container-center align-items-center">
+                <p>${state.playerName}</p>
+                <p id="score-0" class="ps-2 text-primary">0</p>
             </div>
-            `;
-        chat_area.insertAdjacentHTML('beforeend', markup);
-        chat_area.scrollTop = chat_area.scrollHeight;
+            <p class="px-2 text-primary">-</p>
+            <div class="d-flex justify-container-center align-items-center">
+                <p id="score-1" class="pe-2 text-primary" >0</p>
+                <p>Computer</p>
+            </div>
+        </div>
+    `;
+    $('#score').empty().append(markup);
+};
+
+const initPvPGame = (data) =>{
+    if(state.playerIndex == 1){
+        state.opponentName = data.player_names.player_2;
     }
+    else{
+        state.opponentName = data.player_names.player_1;
+    }
+    $('#turn-status').removeClass('opacity-25');
+    if(data.turn === state.playerIndex){
+        state.isTurn = true;
+    }
+    else state.isTurn = false;
+    updateTurnStatus(state.isTurn)
+    const markup = `
+        <div class="d-flex justify-container-center align-items-center fs-4">
+            <div class="d-flex justify-container-center align-items-center">
+                <p id="player-name" >${state.playerName}</p>
+                <p id="score-0" class="ps-2 text-primary">0</p>
+            </div>
+            <p class="px-2 text-primary">-</p>
+            <div class="d-flex justify-container-center align-items-center">
+                <p id="score-1" class="pe-2 text-primary" >0</p>
+                <p id="opponent-name" >${state.opponentName}</p>
+            </div>
+        </div>
+    `;
+    $('#score').empty().append(markup);
+};
+
+const startGame = ()=>{
+    addGameBoardHandler();
+    hideGreetingCard();
+}
+
+const endGame = ()=>{
+    const markup = `
+        <div class=" greeting-wrapper p-3 w-100">
+            <div class="fs-5 text-warning text-center">
+                <p>
+                    Your friend just left!
+                </p>
+                <a href="/" >
+                    <button class="btn border-radius-8 btn-danger">New Game</button>
+                </a>
+            </div>
+        </div>
+    `;
+    greetingContent.empty().append(markup);
+    showGreetingCard();
+};
+
+/*
+ * Emit socket IO messages
+ */
+const initGame= ()=>{
+    const data = {
+        gameID: state.gameID,
+        gameType: state.gameType,
+        playerName: state.playerName,
+    }
+    socket.emit('init_game', data);
+    
+    displayLoadingCard(`Game ID: ${state.gameID}`)
+}
+
+const joinGame =() =>{
+    const data = {
+        gameID: state.gameID,
+        playerName: state.playerName,
+    }
+    socket.emit('join_current_game', data);
+}
+
+const sendMove=(moveIndex) => {
+    const data = {
+        gameID: state.gameID,
+        moveIndex: moveIndex,
+    };
+    socket.emit('move', data);
+};
+
+const requestRematch = () =>{
+    const data = {
+        gameID: state.gameID,
+        command: REMATCH_REQUEST_COMMAND,
+    };
+    socket.emit('rematch', data);
+    displayLoadingCard();
+};
+
+const acceptRematch =   () =>{
+    const data = {
+        gameID: state.gameID,
+        command: REMATCH_ACCEPT_COMMAND,
+    };
+    socket.emit('rematch', data);
+}
+
+/*
+ * Socket IO messages handler
+ * Handle all incoming messages from socketIO
+ */
+
+socket.on('start_game', (data) =>{
+    if(data.status === 'success'){
+        if(state.gameType === GAME_TYPE_SINGLE){
+            initSinglePlayerGame();
+        }
+        else{
+            initPvPGame(data);
+        };
+        startGame();
+    } 
 });
 
 
-
-// get move from server
 socket.on('move', function (data) {
-    // $('#log').append('<br>Received: ' + msg.data); 
-    if (data.err_msg) {
-        display_error(data.err_msg);
-    }
-    updateMove(data.turn_of_current_move, data.move_index);
-    // Game end: display game draw or game win/lose
-    if (data.is_turn == 2) {
-        isturn = 0;
-        draw_winner(data.winning_line_index, data.is_winner);
-
-    }
-    else isturn = data.is_turn;
-
-    if (isturn) turn_sign.style.backgroundColor = '#77f077';
-    else turn_sign.style.backgroundColor = '#9a9a9a';
-
-});
-
-/* Socket listen on "end_game" from server, if one player left game*/
-socket.on('end_game', function (data) {
-    isturn = data.is_turn;
-    document.querySelector('.error').classList.remove('hidden');
-    $('#error_msg').append(data.msg + '<br>');
-    overlay.classList.toggle('hidden');
-})
-
-
-/* Socket listen on request_replay from server:
-    -- render replay confirm box and send confirm msg to server */
-socket.on('request_replay', function (data) {
-    replay_confirm.classList.remove('hidden');
-    replay_request.classList.add('hidden');
-
-});
-
-
-/* Socket listen on a msg "replay" from server:
-    -- reset play board and start a new game  */
-socket.on('replay', function (data) {
-    for (const element of allCells) {
-        if (element.classList.contains('winner-nodes')) {
-            element.classList.remove('winner-nodes')
+    if(!state.your_turn && data.status === 'success'){
+        updateBoard(data.move_index);
+        state.isTurn = !state.isTurn;
+        updateTurnStatus();
+        if(data.game_over){
+            gameOver(data);   
         }
-        element.textContent = '';
     }
-    init(false);
-    isturn = data.is_turn;
-    if (isturn) turn_sign.style.backgroundColor = '#77f077';
-    else turn_sign.style.backgroundColor = '#9a9a9a';
-
-    document.getElementById('replay-container').classList.add('hidden');
 });
 
+socket.on('rematch', (data) =>{
+    $('#game-over-banner').addClass('hidden');
+    const command = data.command;
+    if (state.gameType === GAME_TYPE_SINGLE){
+        $('#game-over-banner').addClass('hidden');
+        state.isTurn=data.your_turn;
+        state.lastMoveIndex = [];
+        updateTurnStatus();
+        resetBoard();
+        state.isTurn = 1;
+        hideGreetingCard();
 
+    }
+    else {
+        if (command === REMATCH_REQUEST_COMMAND){
+            // Received rematch request from opponent
+            const markup = `
+                <div class="greeting-wrapper p-3 w-100">
+                    <div class="fs-3 text-warning text-center">
+                        <p>
+                            Your friend is challenging for a rematch
+                        </p>
+                        <div class="text-center">
+                            <button onClick="acceptRematch()" class="btn border-radius-8 btn-primary">Let's go</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            greetingContent.empty().append(markup);
+            showGreetingCard();
+        }
+    
+        else if (command === REMATCH_START_COMMAND){
+            // A rematch is initiated, proceed for a new game
+            $('#game-over-banner').addClass('hidden');
+            if(data.player_turn === state.playerIndex){
+                state.isTurn = true;
+            }
+            else state.isTurn = false;
+            state.lastMoveIndex = [];
+            updateTurnStatus();
+            resetBoard();
+            hideGreetingCard();
+        }
+    }
+});
+
+socket.on('end_game', (data)=>{
+    endGame();
+});
+
+socket.on('error', (data)=>{
+    const markup = `
+        <div class=" greeting-wrapper p-3 w-100">
+            <div class="fs-3 text-warning text-center">
+                <p>
+                    ${data.error_msg}
+                </p>
+                <a href="/" class="btn btn-danger pe-auto" >Restart</a>
+            </div>
+        </div>
+    `;
+    greetingContent.empty().append(markup);
+    showGreetingCard();
+});
+
+socket.on("connect_error", () => {
+});
+
+const init= () =>{
+    showGreetingCard();
+    $('#game-over-banner').addClass('hidden');
+
+};
+
+init();

@@ -14,25 +14,38 @@ import django_heroku
 from pathlib import Path
 import whitenoise
 import os
+import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve(strict=True).parent.parent
 
+# Load environment variable
+env = environ.Env(
+    # set casting, default value
+    DEBUG=(bool, False)
+)
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
+# reading .env file
+environ.Env.read_env('.env')
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', 'ThisIsYourSecretKey!')
+SECRET_KEY = env.str('DJANGO_SECRET_KEY', default='TestRandomSecretKey!')
+DEBUG = env.bool('DEBUG', default=True)
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+ALLOWED_HOSTS = []
+ALLOWED_HOSTS_URL = env.str('ALLOWED_HOSTS_URL', '')
+ALLOWED_HOSTS.append(ALLOWED_HOSTS_URL)
+SERVER = env.str('SERVER', 'http://127.0.0.1:8000')
+NUMBER_OF_ROW=15
+NUMBER_OF_COL=15
 
-ALLOWED_HOSTS = ['127.0.0.1', '.herokuapp.com']
+GAME_TYPE_SINGLE='single'
+GAME_TYPE_PVP='pvp'
+ASYNC_MODE='eventlet'
+MAX_NUMBER_OF_ROOM=100000
 
+AI_ID='AI_0'
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -86,25 +99,6 @@ DATABASES = {
 }
 
 
-# Password validation
-# https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
-
-AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
-]
-
-
 # Internationalization
 # https://docs.djangoproject.com/en/3.1/topics/i18n/
 
@@ -123,6 +117,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
-
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 django_heroku.settings(locals())

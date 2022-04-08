@@ -1,196 +1,211 @@
-from re import A
-from .config import Config
 from .helper import Helper
+from django.conf import settings
 
+NUMBER_OF_ROW=settings.NUMBER_OF_ROW
+NUMBER_OF_COL=settings.NUMBER_OF_COL
 
+GAME_TYPE_SINGLE=settings.GAME_TYPE_SINGLE
+GAME_TYPE_PVP=settings.GAME_TYPE_PVP
 class Game:
-    '''
+    """
     Game class used to create new game, process move and decide winner
-    '''
+    """
 
-    def __init__(self, game_id):
+    def __init__(self, game_id, game_type):
         self.game_id = game_id      # Unique game ID of each game
-        # Dictionary to convert player's id to its turn (1 for 1st, 0 for 2nd)
-        self.id_to_turn = {}
-        self.id_to_opponent = {}    # Dictionary to convert player's id to its opponent's id
-        self.id_to_name = {}        # Dictionary to convert player's id to its name
-        self.play_board = [         # 2-D matrix represent game state
-            [0 for _ in range(Config.NUM_COL)] for _ in range(Config.NUM_ROW)]
-        self.winner_id = None       # player's id who wins
-        self.stat_board = {}        # statistics on number of winning games between 2 players
-        # contain winning nodes(5 connected nodes)
-        self.winning_line_index = []
-        # Decide whose turn. 0 for 2nd player, 1 for 1st player, 2 means game over
+        self.game_type = game_type  # game type: single or PvP(player vs player)
+        self.player_id = []         # sid of player created by socket IO module 
+        self.player_names = []      # Contains all player's names
+        self.player_index = {}      # Player's order: 1 or 2
+        self.current_turn = 1       # Decide player's turn (1 or 2)
+        self.game_board = [[0 for _ in range(NUMBER_OF_ROW)] for _ in range(NUMBER_OF_COL)]     # 2D matrix represents game board
+        self.game_over  = False     # decide whether game is ended
+        self.winning_line = []      # store the indexes forming a winning line
+        self.number_of_moves = 0    # count the number of taken move 
+        self.number_of_games = 1    # count the number of games
+
+    def add_player(self, id, player_name):
+        """
+        Add new player in PvP game
+        When the second player is added, its turn will be 2
+        
+        @param id: player's ID created by socket IO
+        @param player_name: player's name
+
+        @return: None
+        """
+        if not player_name:
+            player_name = 'Default'
+            
+        self.player_id.append(id)
+        self.player_index[id] = len(self.player_id)
+        self.player_names.append(player_name)
+
+    def get_opponent_id(self, player_id):
+        index = self.player_index[player_id]
+        if index == 1:
+            return self.player_id[index]
+        else: 
+            return self.player_id[0]   
+
+    def get_player_index(self, player_id):
+        """Return player's order according to its id"""
+        return self.player_index.get(player_id)
+
+    def rematch(self):
+        """
+        Reset game states: game over, game board and  turn for a rematch
+        
+        @return: None
+        """
+        self.game_over = False
         self.current_turn = 1
-        # game type: AI or PvP(player vs player)
-        self.type_opponent = 'human'
-        self.nb_moves = 0           # Number of moves taken since game starts
+        self.winning_line = []
+        self.number_of_moves = 0
+        self.number_of_games += 1
+        for row in range(NUMBER_OF_ROW):
+            for col in range(NUMBER_OF_COL):
+                self.game_board[row][col] = 0
 
-    def create_new_game(self, id, player_name):
-        '''
-        Create new game with unique ID and its player name
-        :param id: player's ID
-        :param player_name: player name
-        :return: None
-        '''
-        if not self.id_to_turn:
-            self.id_to_turn[id] = 1
-            self.stat_board[id] = 0
-            self.id_to_opponent[id] = 0
-        else:
-            self.id_to_turn[id] = 0
-            self.stat_board[id] = 0
-            for sid, val in self.id_to_opponent.items():
-                self.id_to_opponent[sid] = id
-                self.id_to_opponent[id] = sid
-                break
-        self.id_to_name[id] = player_name
+    def process_move(self, player_id, move_index):
+        """
+        Play all moves in board (PvP or single).
+        Return True if move index is valid else False
 
-    def reset_game(self):
-        '''
-        Reset all game states: game board, winner, turn
-        :return: None
-        '''
-        self.current_turn = 1
-        self.winning_line_index = []
-        self.winner_id = None
-        self.play_board = [
-            [0 for _ in range(Config.NUM_COL)] for _ in range(Config.NUM_ROW)]
+        @param sid: player's ID
+        @param move_index: 2D-array indexed of move
+        
+        @return: Bool
+        """
+        if self.get_player_index(player_id) == self.current_turn \
+            and self.is_valid_move(move_index):
+            row, col = move_index
+            move_value = self.get_player_index(player_id)
+            self.number_of_moves += 1
+            self.game_board[row][col] = move_value
+            print(f'processing {player_id} {move_value} {move_index}')
+            if self.is_winning_move(row, col, move_value):
+                self.game_over = True
 
-    def process_move(self, id, move_index_2D):
-        '''
-        Process all moves happening in game (PvP or AI).
-        :param sid: player's ID
-        :param move_index_2D: 2D-array indexed of move
-        :return: True/False
-        '''
-        if self.id_to_turn.get(id) == self.current_turn:
-            winning_line_index = []
-
-            row, col = move_index_2D
-            if self.play_board[row][col] == 0:
-                self.nb_moves += 1
-                self.play_board[row][col] = self.current_turn + 1
-
-                if self.nb_moves == Config.NUM_COL * Config.NUM_ROW:
-                    self.current_turn = 2
-
-                elif self.is_winning_move(row, col, self.current_turn+1):
-                    for index in self.winning_line_index:
-                        winning_line_index.append(
-                            Helper.convert_index_to_1D(index))
-                    self.winning_line_index = winning_line_index
-                    self.winner_id = id
-                    self.stat_board[id] += 1
+            elif self.number_of_moves == NUMBER_OF_COL * NUMBER_OF_ROW:
+                # Game tie
+                self.game_over = True
+                
+            else:
+                if self.current_turn == 1:
                     self.current_turn = 2
                 else:
-                    self.current_turn = not(self.current_turn)
-                return True
+                    self.current_turn = 1
+            return True
 
         return False
-
-    def is_winning_move(self, x, y, target):
-        '''
-        Check if current move is the winning move 
-        by count all surrounding nodes that has the same target value
-        :param x: row index 
-        :param y: column index
-        :param target: 1 or 2. Represent whose move
-        :return: True/False
-        '''
-        for direction in ['up_down', 'left_right', 'up_left', 'down_right']:
-            if self.count_connected(x, y, target, direction) == 5:
-                return True
-        return False
-
-    def is_available_index(self, board, x, y, compared_target, contain_set):
-        '''
-        Check if current move index is valid
-        :param x: row index 
-        :param y: column index
-        :param compared_target: 1 or 2. Target to compare
-        :param contain_set: list of checked index    
-        :return: True/False
-        '''
-        if x >= 0 and y >= 0 and x < Config.NUM_ROW and y < Config.NUM_COL and \
-                board[x][y] == compared_target and (x, y) not in contain_set:
+    
+    def is_valid_move(self,move_index):
+        """
+        Check if the move index is valid
+        """
+        row, col = move_index
+        if row >= 0 and col >= 0 and row < NUMBER_OF_ROW and col < NUMBER_OF_COL \
+            and self.game_board[row][col] == 0:
             return True
         return False
 
-    def count_connected(self, x, y, target, direction):
-        '''
+    def is_winning_move(self, row, col, target):
+        """
+        Check if current move is the winning move 
+        by count all surrounding nodes that has the same target value
+        """
+        for direction in ['up_down', 'left_right', 'up_left', 'down_right']:
+            if self.count_connected(row, col, target, direction) == 5:
+                return True
+        return False
+    
+
+    def is_available_index(self, row, col, target, contain_set):
+        """
+        Check if current move index is valid
+        """
+        if row >= 0 and col >= 0 and row < NUMBER_OF_ROW and col < NUMBER_OF_COL \
+            and self.game_board[row][col] == target and (row, col) not in contain_set:
+            return True
+        return False
+
+    def count_connected(self, row, col, target, direction):
+        """
         Count number of connected nodes in game matrix in one direction
-        :param x: row index 
-        :param y: column index
-        :param target: 1 or 2. Represent whose move
-        :param direction: direction to look for connected nodes   
-        :return: int
-        '''
+
+        @param row: row index 
+        @param col: column index
+        @param target: 1 or 2. Represent whose move
+        @param direction: direction to look for connected nodes   
+        
+        @return: int
+        """
         count = 1
         stack = []
         seen = set()
         if direction == 'left_right':
-            stack.append((x, y))
-            seen.add((x, y))
+            stack.append((row, col))
+            seen.add((row, col))
             while stack:
-                if self.is_available_index(self.play_board, x, y - 1, target, seen):
-                    stack.append((x, y-1))
-                    seen.add((x, y-1))
+                if self.is_available_index(row, col - 1, target, seen):
+                    stack.append((row, col-1))
+                    seen.add((row, col-1))
                     count += 1
 
-                if self.is_available_index(self.play_board, x, y + 1, target, seen):
-                    stack.append((x, y+1))
-                    seen.add((x, y+1))
+                if self.is_available_index(row, col + 1, target, seen):
+                    stack.append((row, col+1))
+                    seen.add((row, col+1))
                     count += 1
-                x, y = stack.pop()
+                row, col = stack.pop()
 
         if direction == 'up_down':
-            stack.append((x, y))
-            seen.add((x, y))
+            stack.append((row, col))
+            seen.add((row, col))
             while stack:
-                if self.is_available_index(self.play_board, x-1, y, target, seen):
-                    stack.append((x-1, y))
-                    seen.add((x-1, y))
+                if self.is_available_index(row-1, col, target, seen):
+                    stack.append((row-1, col))
+                    seen.add((row-1, col))
                     count += 1
 
-                if self.is_available_index(self.play_board, x + 1, y, target, seen):
-                    stack.append((x+1, y))
-                    seen.add((x+1, y))
+                if self.is_available_index(row + 1, col, target, seen):
+                    stack.append((row+1, col))
+                    seen.add((row+1, col))
                     count += 1
-                x, y = stack.pop()
+                row, col = stack.pop()
 
         if direction == 'up_left':
-            stack.append((x, y))
-            seen.add((x, y))
+            stack.append((row, col))
+            seen.add((row, col))
             while stack:
-                if self.is_available_index(self.play_board, x+1, y + 1, target, seen):
-                    stack.append((x+1, y+1))
-                    seen.add((x+1, y+1))
+                if self.is_available_index(row+1, col + 1, target, seen):
+                    stack.append((row+1, col+1))
+                    seen.add((row+1, col+1))
                     count += 1
 
-                if self.is_available_index(self.play_board, x-1, y - 1, target, seen):
-                    stack.append((x-1, y-1))
-                    seen.add((x-1, y-1))
+                if self.is_available_index(row-1, col - 1, target, seen):
+                    stack.append((row-1, col-1))
+                    seen.add((row-1, col-1))
                     count += 1
 
-                x, y = stack.pop()
+                row, col = stack.pop()
 
         if direction == 'down_right':
-            stack.append((x, y))
-            seen.add((x, y))
+            stack.append((row, col))
+            seen.add((row, col))
             while stack:
-                if self.is_available_index(self.play_board, x - 1, y + 1, target, seen):
-                    stack.append((x-1, y+1))
-                    seen.add((x-1, y+1))
+                if self.is_available_index(row - 1, col + 1, target, seen):
+                    stack.append((row-1, col+1))
+                    seen.add((row-1, col+1))
                     count += 1
 
-                if self.is_available_index(self.play_board, x+1, y - 1, target, seen):
-                    stack.append((x+1, y-1))
-                    seen.add((x+1, y-1))
+                if self.is_available_index(row+1, col - 1, target, seen):
+                    stack.append((row+1, col-1))
+                    seen.add((row+1, col-1))
                     count += 1
-                x, y = stack.pop()
+                row, col = stack.pop()
 
         if count == 5:
-            self.winning_line_index = list(seen)
+            self.winning_line = list(seen)
             return count
         return None

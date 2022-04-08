@@ -11,7 +11,9 @@ class Config:
     """Set Django configuration vars from .env file."""
 
     # Load in enviornemnt variables
-    NUM_ROW = int(os.environ.get("NUM_ROW"))
-    NUM_COL = int(os.environ.get('NUM_COL'))
-    ASYNC_MODE = os.getenv('ASYNC_MODE')
-    SERVER = os.getenv('SERVER')
+    NUM_ROW = 16
+    NUM_COL = 16
+    ASYNC_MODE = 'eventlet'
+    SERVER = 'http://127.0.0.1:8000'
+    AI_ID = 'AI_0'
+    MAX_NUMBER_OF_ROOM = 100000000
