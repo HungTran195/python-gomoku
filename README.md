@@ -1,6 +1,7 @@
 # caro-game
 ### Quick demo:
-https://nogamesnolife.herokuapp.com/
+
+(Archieve) https://nogamesnolife.herokuapp.com/
 
 ![Alt Text](https://github.com/QuocHung52/python-gomoku/blob/af92d2bd07197c8859a87cb20e9def82c10b8b8d/game/static/game/images/screenshot.png) 
 
