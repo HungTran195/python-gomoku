@@ -1,120 +1,118 @@
 from django.conf import settings
+from typing import List, Tuple, Optional, Set
+import numpy as np
 
-NUMBER_OF_ROW=settings.NUMBER_OF_ROW
-NUMBER_OF_COL=settings.NUMBER_OF_COL
+NUMBER_OF_ROW = settings.NUMBER_OF_ROW
+NUMBER_OF_COL = settings.NUMBER_OF_COL
 
 class MiniMax:
     '''
-    A class used MiniMax with alpha, beta pruning
-    to predict the next best possible move
+    A class implementing MiniMax with alpha-beta pruning
+    to predict the next best possible move for Gomoku AI
     '''
 
-    def __init__(self, play_board):
-        self.play_board = play_board    # a deep-copy of original board
-        self.LIMIT_DEPTH = 3            # Max depth of tree to search for next move
+    def __init__(self, play_board: np.ndarray):
+        self.play_board = play_board.copy()  # Deep copy of original board
+        self.LIMIT_DEPTH = 3                 # Max depth of tree to search for next move
+        
+        # Pre-compute direction vectors for efficiency
+        self.directions = [
+            (0, 1),   # horizontal
+            (1, 0),   # vertical
+            (1, 1),   # diagonal down-right
+            (1, -1),  # diagonal down-left
+        ]
+        
+        # Scoring weights for different line lengths
+        self.score_weights = {
+            3: 100,
+            4: 1000,
+            5: 100000
+        }
 
-    def is_playable(self, x, y):
+    def is_playable(self, x: int, y: int) -> bool:
         '''
-        Check whether index (x, y) is out of the board
+        Check whether index (x, y) is within the board boundaries
         :param x: row index 
         :param y: column index
-        Return true/false
+        :return: True if position is valid, False otherwise
         '''
-        if x >= 0 and y >= 0 and x < NUMBER_OF_ROW and y < NUMBER_OF_COL:
-            return True
-        return False
+        return 0 <= x < NUMBER_OF_ROW and 0 <= y < NUMBER_OF_COL
 
-    def is_available_index(self, board, x, y, compared_target, contain_set=None):
+    def is_available_index(self, board: np.ndarray, x: int, y: int, 
+                          compared_target: int, contain_set: Optional[Set] = None) -> bool:
         '''
         Check if index (x, y) can be used for processing
-        :param board: matrix represent the current board state
+        :param board: matrix representing the current board state
         :param x: row index 
         :param y: column index
         :param compared_target: value of the current processing state
-        :param contain_set: a set type variable contain all processed value
-        :Return: true/false
+        :param contain_set: a set containing all processed values
+        :return: True if position is available, False otherwise
         '''
-        if self.is_playable(x, y) and board[x][y] == compared_target:
-            if contain_set:
-                if (x, y) not in contain_set:
-                    return True
-            else:
-                return True
-        return False
+        if not self.is_playable(x, y) or board[x, y] != compared_target:
+            return False
+        
+        if contain_set is not None:
+            return (x, y) not in contain_set
+        return True
 
-    def get_score_from_count(self, count):
+    def get_score_from_count(self, count: int) -> int:
         '''
-        Return points based on number of connected node in board
-        :param count: number of connected node in board
-        :return: int
+        Return points based on number of connected nodes in board
+        :param count: number of connected nodes in board
+        :return: score value
         '''
-        if count == 3:
-            return 100
-        if count == 4:
-            return 1000
-        if count == 5:
-            return 100000
-        return count*count
+        return self.score_weights.get(count, count * count)
 
-    def count_and_score_connected(self, board, row, col, target):
+    def count_and_score_connected(self, board: np.ndarray, row: int, col: int, target: int) -> int:
         '''
-        Count the number of connected node in game board and decide point for the current move
-        :param board: matrix represent the current board state
+        Count the number of connected nodes in game board and calculate score for the current move
+        :param board: matrix representing the current board state
         :param row: index of row in board matrix
         :param col: index of col in board matrix
-        :param target: value of node to compared (1 is for human and 2 is for ai)
-        :return: int
+        :param target: value of node to compare (1 for human, 2 for AI)
+        :return: calculated score
         '''
         score = 0
-        directions = [[(0, -1), (0, 1)],   # vertical coeff
-                      [(-1, 0), (1, 0)],   # horizontal coeff
-                      [(-1, -1), (1, 1)],  # diagonal coeff - left -> right
-                      [(-1, 1), (1, -1)]]  # diagonal coeff - right -> left
-        for direction in directions:
-            # Set count to 0 before looping any direction
-            count = 1
-            # Loop through the coefficients of each direction(vertical, horizontal and diagonals)
-            # Each direction will be checked 2 times from 2 sides
-            # started from the starting point with 2 different coefficients
-            # (check_1)     _                _           _             _
-            #     _      (check_1)           _           _             _
-            #     _         _       (starting point)     _             _
-            #     _         _                _        (check_2)        _
-        #     _         _                    _           _         (check_2)
-            for coeffs in direction:
-                # get coefficient of x and y from coeffs tupple
-                coeff_x, coeff_y = coeffs
-                # reset co-ordinate (x, y) to starting point
-                x, y = row + coeff_x, col + coeff_y
-                # if the current node belongs to other's player, this connected line is blocked
-                # then it is not valuable as other none blocked line
-                if self.is_playable(x, y) and board[x][y] != 0 and board[x][y] != target:
-                    # count -= 1
-                    continue
-                # while it's not winning move and neither of x and y index is available
-                # loop through one side of the direction and count the connected nodes
-                while self.is_available_index(board, x, y, target):
-                    count += 1
-                    x = x + coeff_x
-                    y = y + coeff_y
-                    # if count is 5, this mean that game is over
-                    # the current move is the winning move
-                    # no need to check for any other possible moves
-                    if count == 5:
-                        return self.get_score_from_count(count)
-                
+        
+        for dr, dc in self.directions:
+            count = 1  # Count the current position
+            
+            # Count in positive direction
+            count += self._count_in_direction(board, row, col, dr, dc, target)
+            # Count in negative direction  
+            count += self._count_in_direction(board, row, col, -dr, -dc, target)
+            
+            # Early termination if winning move found
+            if count >= 5:
+                return self.get_score_from_count(count)
+            
             score += self.get_score_from_count(count)
 
         return score
+    
+    def _count_in_direction(self, board: np.ndarray, row: int, col: int, 
+                           dr: int, dc: int, target: int) -> int:
+        """Count consecutive pieces in a given direction"""
+        count = 0
+        r, c = row + dr, col + dc
+        
+        while (self.is_playable(r, c) and board[r, c] == target):
+            count += 1
+            r += dr
+            c += dc
+            
+        return count
 
-    def score_move_taken(self, current_board, move_taken, is_ai):
+    def score_move_taken(self, current_board: np.ndarray, move_taken: List[Tuple[int, int]], 
+                        is_ai: bool) -> int:
         '''
         Score the current game state created by predicted move
-        :param current_board: matrix represent the current board state
-        :param move_taken: list that contain move taken by ai and human 
-        :param is_ai: true AI's turn, false - human's turn
-
-        :return: int
+        :param current_board: matrix representing the current board state
+        :param move_taken: list containing moves taken by AI and human 
+        :param is_ai: True if AI's turn, False if human's turn
+        :return: total score
         '''
         target = 2 if is_ai else 1
         defense = 1 if is_ai else 2
@@ -123,68 +121,77 @@ class MiniMax:
 
         for move in move_taken:
             row, col = move
-            if current_board[row][col] == target:
-                # Count the number of connected node
-                score = self.count_and_score_connected(
-                    current_board, row, col, target)
-                # Incase the move is to defense (block other's move from either side)
-                # Count the number of nodes that are blocked
-                # Move that block more nodes generates higher score
-                score_defense = self.count_and_score_connected(
-                    current_board, row, col, defense)
-
+            if current_board[row, col] == target:
+                # Count the number of connected nodes
+                score = self.count_and_score_connected(current_board, row, col, target)
+                # Count defensive moves (blocking opponent's moves)
+                score_defense = self.count_and_score_connected(current_board, row, col, defense)
                 # Final score is the sum of all scores in 4 directions
                 total_score += score + score_defense
+                
         return total_score
 
-    def get_available_indexes(self, current_board):
+    def get_available_indexes(self, current_board: np.ndarray) -> Set[Tuple[int, int]]:
         '''
-        Get all available index for next move
-        Only get index around played node in board due to limited computability
-        :param current_board: matrix represent the current board state
+        Get all available indexes for next move
+        Only get indexes around played nodes in board due to computational limits
+        :param current_board: matrix representing the current board state
         :return: set of all available moves
         '''
         possible_moves = set()
-        for row in range(NUMBER_OF_ROW):
-            for col in range(NUMBER_OF_COL):
-                if current_board[row][col] != 0:
-                    for i in (-1, 0,  1):
-                        for j in (-1, 0, 1):
-                            if (i, j) != (0, 0) and self.is_available_index(current_board, row + i, col + j, 0, possible_moves):
-                                possible_moves.add((row + i, col + j))
+        
+        # Find all non-empty positions
+        non_empty_positions = np.where(current_board != 0)
+        
+        for row, col in zip(non_empty_positions[0], non_empty_positions[1]):
+            # Check all 8 surrounding positions
+            for dr in (-1, 0, 1):
+                for dc in (-1, 0, 1):
+                    if (dr, dc) != (0, 0):
+                        new_row, new_col = row + dr, col + dc
+                        if (self.is_available_index(current_board, new_row, new_col, 0, possible_moves)):
+                            possible_moves.add((new_row, new_col))
+        
         return possible_moves
 
-    def minimax(self, current_board, move_index, depth, alpha, beta, possible_moves, move_taken, is_max_player):
+    def minimax(self, current_board: np.ndarray, move_index: Tuple[int, int], 
+                depth: int, alpha: float, beta: float, possible_moves: Optional[Set], 
+                move_taken: List[Tuple[int, int]], is_max_player: bool) -> Tuple[float, Optional[Tuple[int, int]]]:
         '''
-        Recursively loop through all possible move to find the best one with the highest score
-        :param current_board: matrix represent the current board state
-        :param move_index: human's latest move index
+        Recursively search through all possible moves to find the best one with the highest score
+        :param current_board: matrix representing the current board state
+        :param move_index: latest move index
         :param depth: current depth of the search tree
         :param alpha: the best (highest-value) choice found by Maximizer
         :param beta: the best (lowest-value) choice found by Minimizer
-        :return: list type
+        :param possible_moves: set of possible moves
+        :param move_taken: list of moves taken so far
+        :param is_max_player: True if maximizing player (AI), False if minimizing (human)
+        :return: tuple of (best_score, best_move)
         '''
         if depth == self.LIMIT_DEPTH:
-            score = self.score_move_taken(
-                current_board, move_taken, is_ai=True)
+            score = self.score_move_taken(current_board, move_taken, is_ai=True)
             return score, move_index
-        best_move = None
+            
         row, col = move_index
-
-        current_board[row][col] = 2 if is_max_player else 1
+        current_board[row, col] = 2 if is_max_player else 1
         all_possible_moves = self.get_available_indexes(current_board)
+        best_move = None
 
-        # Use max score when it is AI's turn
         if is_max_player:
-            # Initialise best_score with small value, - inf
-            best_score = 0
+            # Maximizing player (AI)
+            best_score = float('-inf')
             for move in all_possible_moves:
                 move_taken.append(move)
-
-                score, good_move = self.minimax(
-                    current_board, move, depth + 1, alpha, beta, all_possible_moves, move_taken, is_max_player=False)
-                previous_move = move_taken.pop()
-                current_board[previous_move[0]][previous_move[1]] = 0
+                
+                score, _ = self.minimax(
+                    current_board, move, depth + 1, alpha, beta, 
+                    all_possible_moves, move_taken, is_max_player=False
+                )
+                
+                # Undo the move
+                prev_move = move_taken.pop()
+                current_board[prev_move[0], prev_move[1]] = 0
 
                 if score > best_score:
                     best_score = score
@@ -192,19 +199,22 @@ class MiniMax:
 
                 alpha = max(alpha, best_score)
                 if beta <= alpha:
-                    break
+                    break  # Beta cutoff
 
-        # Use min score to simulate human's turn
         else:
-            # Initialise best_score with high value, + inf
-            best_score = 10000000
+            # Minimizing player (human)
+            best_score = float('inf')
             for move in all_possible_moves:
                 move_taken.append(move)
-
-                score, good_move = self.minimax(
-                    current_board, move, depth + 1, alpha, beta, all_possible_moves, move_taken, is_max_player=True)
-                previous_move = move_taken.pop()
-                current_board[previous_move[0]][previous_move[1]] = 0
+                
+                score, _ = self.minimax(
+                    current_board, move, depth + 1, alpha, beta, 
+                    all_possible_moves, move_taken, is_max_player=True
+                )
+                
+                # Undo the move
+                prev_move = move_taken.pop()
+                current_board[prev_move[0], prev_move[1]] = 0
 
                 if score < best_score:
                     best_score = score
@@ -212,30 +222,35 @@ class MiniMax:
 
                 beta = min(beta, best_score)
                 if beta <= alpha:
-                    break
+                    break  # Alpha cutoff
 
         return best_score, best_move
 
-    def calculate_next_move(self, move_index):
+    def calculate_next_move(self, move_index: Tuple[int, int]) -> Optional[Tuple[int, int]]:
         '''
         Calculate next move based on the human's latest move index
         :param move_index: human's latest move index
-        :return: list type
+        :return: next move coordinates or None if no valid move
         '''
-        current_board = self.play_board
+        current_board = self.play_board.copy()
         score, next_move = self.minimax(
-            current_board, move_index, depth=0, alpha=-1, beta=1000000, possible_moves=None, move_taken=[move_index], is_max_player=True)
-
+            current_board, move_index, depth=0, alpha=float('-inf'), 
+            beta=float('inf'), possible_moves=None, move_taken=[move_index], 
+            is_max_player=True
+        )
         return next_move
 
 
-def generate_next_move(game, move_index_2D):
-    play_board = [[0 for _ in range(NUMBER_OF_COL)]
-                  for _ in range(NUMBER_OF_ROW)]
-    for row in range(NUMBER_OF_ROW):
-        for col in range(NUMBER_OF_COL):
-            play_board[row][col] = game.game_board[row][col]
-
+def generate_next_move(game, move_index_2D: Tuple[int, int]) -> Optional[Tuple[int, int]]:
+    """
+    Generate the next AI move using minimax algorithm
+    :param game: Game instance
+    :param move_index_2D: 2D coordinates of the last move
+    :return: next move coordinates or None if no valid move
+    """
+    # Convert game board to numpy array for better performance
+    play_board = np.array(game.game_board, dtype=int)
+    
     solver = MiniMax(play_board)
     next_move = solver.calculate_next_move(move_index_2D)
     return next_move
