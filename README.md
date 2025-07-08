@@ -1,4 +1,5 @@
 # Gomoku Game
+![Alt Text](https://github.com/HungTran195/python-gomoku/blob/master/static/images/screenshot.png) 
 
 A web-based implementation of Gomoku (Five in a Row) built with FastAPI and Socket.IO. Play against an AI opponent or challenge a friend in real-time.
 
