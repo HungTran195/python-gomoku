@@ -55,7 +55,7 @@ sio = socketio.AsyncServer(
 socket_app = socketio.ASGIApp(sio, app)
 
 # Setup static files and templates
-static_path = Path(__file__).parent / "game" / "static" / "game"
+static_path = Path(__file__).parent / "static"
 templates_path = Path(__file__).parent / "templates"
 
 if static_path.exists():
