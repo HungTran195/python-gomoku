@@ -1,0 +1,195 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap');
+
+:root{
+    --color-player-1:#18BCB7;
+    --color-player-2:#0C1446;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family:  'Roboto', sans-serif;
+    background-color: var(--bs-white);
+    color: var(--bs-gray-900);
+    line-height: 1.6;
+    font-size: 1.2rem;
+}
+
+a {
+    text-decoration: none;
+    color: var(--bs-gray-900);
+}
+
+ul {
+    list-style: none;
+}
+
+h1, h2 {
+    font-weight: 400;
+    line-height: 1.2;
+}
+
+p {
+    margin: 10px 0;
+}
+
+.greeting-container{
+    z-index: 1;
+    top: 0;
+    left: 0;
+    background-color: rgba(0, 0, 0, 0.25);
+    height: 100vh;   
+    animation: fadeIn 0.6s;
+
+
+}
+
+.greeting-wrapper{
+    width: 100%;
+    max-width: 400px;
+    background-color: var(--bs-gray-800);
+    color: var(--bs-gray-400);
+    border-radius: 8px;
+}
+
+.greeting-wrapper .select-mode{
+    border-radius: 8px;
+    border: 1px solid var(--bs-gray-400);
+
+}
+
+.greeting-wrapper .select-mode:hover{
+    background-color: var(--bs-primary);
+    border-color:  var(--bs-primary);
+
+}
+
+#room-info-wrapper{ 
+    transition: opacity 0.4s;
+}
+
+.greeting-wrapper figcaption{
+    opacity: 0.6;
+    color: var(--bs-white);
+}
+
+#game-board-container {
+    --my-color: var(--color-player-1);
+    --opponent-color: var(--color-player-2);
+}
+
+.my-node{
+    background-color: var(--my-color);
+}
+
+.opponent-node{
+    background-color: var(--opponent-color);
+}
+
+.my-turn i{
+    color: var(--my-color);
+}
+
+.opponent-turn i{
+    color: var(--opponent-color);
+}
+
+.background-board-cell{
+    width: 40px;
+    height: 40px;
+}
+
+.table-cell{
+    margin: 2.5px;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.node:hover{
+    background-color: var(--player-color);
+    opacity: 0.5;
+}
+
+.board-container{
+    transition: transform 0.5s;
+    background-color: var(--bs-gray-100);
+}
+
+#main{
+    --player-color: var(--color-player-1);
+}
+
+.board-position{
+    top: -20px;
+    left: -17px;
+}
+
+#game-over-banner{
+    animation: fadeIn 0.8s;
+    -webkit-animation: fadeIn 0.8s;
+}
+
+.your-turn i{
+    color: var(--player-color)
+}
+
+.loader {
+    width: 3rem;
+    height: 3rem;
+}
+
+.border-radius-8{
+    border-radius: 8px;
+}
+
+.hidden{
+    display: none !important;
+}
+
+.bg-player1{
+    background-color: var(--color-player-1);
+}
+
+.bg-player2{
+    background-color: var(--color-player-2);
+}
+
+.latest-index{
+    box-shadow: 0 0 10px var(--bs-orange)
+}
+
+.winning-index{
+    color:var(--bs-yellow)
+}
+
+
+@keyframes fadeIn {
+    0% {opacity:0;}
+    100% {opacity:1;}
+}
+
+@-webkit-keyframes fadeIn {
+    0% {opacity:0;}
+    100% {opacity:1;}
+}
+
+@media (max-width: 768px){
+    .board-container{
+        transform: scale(0.8);
+    }
+
+}
+@media (max-width: 576px){
+    .board-container{
+        transform: scale(0.5);
+    }
+
+}

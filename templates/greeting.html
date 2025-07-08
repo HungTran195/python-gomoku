@@ -1,0 +1,63 @@
+
+<div class=" greeting-wrapper p-3 w-100">
+    <form id="start-form">
+        <div class="d-flex justify-content-between align-items-center my-3">
+            <div class="fs-6 fw-lighter">
+                <p>Your Name </p>
+            </div>
+            <div class="">
+                <input maxlength="10" name="player-name" class="form-control form-control-lg" type="text" required>
+
+            </div>
+        </div>
+        <div class="d-flex justify-content-between align-items-center my-2">
+            <div class="fs-6 ">
+                <p>Play Against </p>
+            </div>
+            <div class="fs-5 d-flex justify-content-end algin-items-start">
+                <div class="pe-2">
+
+                    <input type="radio" class="btn-check" id="pvp" value="pvp" name="game-type" autocomplete="off">
+                    <label class="btn btn-outline-primary fs-5 text-light" for="pvp">Human</label><br>
+                </div>
+                <div class="ps-2">
+
+                    <input type="radio" class="btn-check" id="single" value="single" name="game-type" autocomplete="off" checked>
+                    <label class="btn btn-outline-primary fs-5 text-light" for="single">Machine</label><br>
+                </div>
+
+            </div>
+        </div>
+        <div id="game-info-wrapper" class="opacity-50">
+            <div id="game-info" class="d-flex justify-content-between align-items-center mb-2">
+                <div class="fs-6 ">
+                    <p>Game ID </p>
+                </div>
+                <div class=" fs-6 w-75 d-flex flex-column text-end ">
+                    <div class="d-flex justify-content-end align-items-center">
+                        <p id="game-id" class="text-light fs-3"> {{game_id}}</p>
+                    </div>
+                    <figcaption class="blockquote-footer">
+                        Share the game ID to your friend to play
+                    </figcaption>
+                </div>
+            </div>
+            <div id="join-game" class="d-flex justify-content-between align-items-start my-4 hidden">
+                <div class="fs-6 ">
+                    <p>Game ID </p>
+                </div>
+                <div class="fs-6 d-flex flex-column text-end align-items-end">
+                    <input class="text-end w-75 form-control" type="number" name="active-game-id" placeholder="Enter game id" disabled>
+                </div>
+            </div>
+        </div>
+        <div class="d-flex justify-content-between">
+            <input type="checkbox" class="btn-check" id="join-game-btn" name="join-game-btn" autocomplete="off">
+            <label class="btn btn-outline-success" for="join-game-btn">Join Game</label>
+            <button type="submit" class="btn border-radius-8 btn-primary">Let's go</button>
+        </div>
+    </form>
+    
+    
+</div>
+

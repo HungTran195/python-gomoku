@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Socket.IO Test</title>
+    <script src="https://cdn.socket.io/4.4.1/socket.io.min.js"></script>
+</head>
+<body>
+    <h1>Socket.IO Test</h1>
+    <button onclick="testConnection()">Test Connection</button>
+    <button onclick="testInitGame()">Test Init Game</button>
+    <div id="output"></div>
+
+    <script>
+        const socket = io();
+        const output = document.getElementById('output');
+
+        function log(message) {
+            output.innerHTML += '<p>' + message + '</p>';
+            console.log(message);
+        }
+
+        socket.on('connect', () => {
+            log('Connected to Socket.IO server');
+        });
+
+        socket.on('disconnect', () => {
+            log('Disconnected from Socket.IO server');
+        });
+
+        socket.on('connect_error', (error) => {
+            log('Connection error: ' + error);
+        });
+
+        socket.on('start_game', (data) => {
+            log('Received start_game: ' + JSON.stringify(data));
+        });
+
+        socket.on('error', (data) => {
+            log('Received error: ' + JSON.stringify(data));
+        });
+
+        function testConnection() {
+            log('Testing connection...');
+        }
+
+        function testInitGame() {
+            const testData = {
+                gameID: 12345,
+                gameType: 'single',
+                playerName: 'TestPlayer'
+            };
+            log('Sending init_game: ' + JSON.stringify(testData));
+            socket.emit('init_game', testData);
+        }
+    </script>
+</body>
+</html> 
