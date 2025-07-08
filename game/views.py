@@ -34,16 +34,12 @@ def convert_numpy_types(obj):
 
 # Store all current games
 games: Dict[int, Game] = {}
-
-# Socket.IO server instance (will be set by main.py)
 sio: Optional[socketio.AsyncServer] = None
 
 def set_socketio_server(socketio_server: socketio.AsyncServer) -> None:
     """Set the Socket.IO server instance for use in event handlers"""
     global sio
     sio = socketio_server
-
-# Socket.IO event handlers
 async def handle_connect(sid: str, environ: Dict[str, Any]) -> None:
     """Handle client connection"""
     print(f"Client connected: {sid}")

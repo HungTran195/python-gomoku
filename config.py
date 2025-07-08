@@ -45,7 +45,6 @@ class Settings(BaseSettings):
 
 # Create settings instance
 settings = Settings()
-print('here')
 
 # Game constants (for backward compatibility)
 NUMBER_OF_ROW = settings.number_of_row

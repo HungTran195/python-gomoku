@@ -155,15 +155,16 @@ const gameOver = (data) =>{
         const isWinner = data.winner === state.playerIndex ? true : false
         displayWinningLine(data.winning_line);
         updateScore(isWinner);
+        
+        // Show winning line first, then game over banner after a delay
         setTimeout(() => {
             if(isWinner) {
                 $('#result').empty().append(`
                     <span><i class="fas fa-trophy px-1"></i></span>
-                    You Won
+                    You Won!
                     <span><i class="fas fa-trophy px-1"></i></span>
                 `);
             }
-
             else {
                 $('#result').empty().append(`
                     <span><i class="fas fa-sad-tear px-1"></i></span>
@@ -173,15 +174,15 @@ const gameOver = (data) =>{
             };
 
             $('#game-over-banner').removeClass('hidden');
-        }, 1000);
+        }, 2000); // Increased delay to 2 seconds to show winning line
     }
     else{
         // game tie
         setTimeout(() => {
             $('#result').empty().append(`
-                <span><i class="fas fa-smile-beam px-1"></i></i></span>
-                Game Tie
-                <span><i class="fas fa-smile-beam px-1"></i></i></span>
+                <span><i class="fas fa-handshake px-1"></i></span>
+                It's a Tie!
+                <span><i class="fas fa-handshake px-1"></i></span>
             `)
 
             $('#game-over-banner').removeClass('hidden');
@@ -400,13 +401,19 @@ socket.on('rematch', (data) =>{
         if (command === REMATCH_REQUEST_COMMAND){
             // Received rematch request from opponent
             const markup = `
-                <div class="greeting-wrapper p-3 w-100">
-                    <div class="fs-3 text-warning text-center">
-                        <p>
-                            Your friend is challenging for a rematch
+                <div class="greeting-wrapper rematch-notification p-4 w-100">
+                    <div class="text-center">
+                        <p class="mb-3">
+                            <i class="fas fa-gamepad me-2"></i>
+                            Your friend is challenging for a rematch!
                         </p>
-                        <div class="text-center">
-                            <button onClick="acceptRematch()" class="btn border-radius-8 btn-primary">Let's go</button>
+                        <div class="d-flex justify-content-center gap-3">
+                            <button onClick="acceptRematch()" class="btn btn-light fw-bold">
+                                <i class="fas fa-check me-2"></i>Accept
+                            </button>
+                            <button onClick="hideGreetingCard()" class="btn btn-outline-light">
+                                <i class="fas fa-times me-2"></i>Decline
+                            </button>
                         </div>
                     </div>
                 </div>

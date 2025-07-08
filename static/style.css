@@ -38,14 +38,12 @@ p {
 }
 
 .greeting-container{
-    z-index: 1;
+    z-index: 1000;
     top: 0;
     left: 0;
-    background-color: rgba(0, 0, 0, 0.25);
+    background-color: rgba(0, 0, 0, 0.7);
     height: 100vh;   
     animation: fadeIn 0.6s;
-
-
 }
 
 .greeting-wrapper{
@@ -53,19 +51,18 @@ p {
     max-width: 400px;
     background-color: var(--bs-gray-800);
     color: var(--bs-gray-400);
-    border-radius: 8px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
 .greeting-wrapper .select-mode{
     border-radius: 8px;
     border: 1px solid var(--bs-gray-400);
-
 }
 
 .greeting-wrapper .select-mode:hover{
     background-color: var(--bs-primary);
     border-color:  var(--bs-primary);
-
 }
 
 #room-info-wrapper{ 
@@ -132,9 +129,71 @@ p {
     left: -17px;
 }
 
+/* Game Over Banner - Improved styling */
 #game-over-banner{
-    animation: fadeIn 0.8s;
-    -webkit-animation: fadeIn 0.8s;
+    animation: slideInFromTop 0.8s ease-out;
+    z-index: 500;
+    top: 0;
+    left: 0;
+    background-color: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(2px);
+}
+
+#game-over-banner .greeting-wrapper{
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    max-width: 450px;
+    padding: 2rem;
+}
+
+#game-over-banner .greeting-wrapper p{
+    margin-bottom: 1.5rem;
+    font-size: 2rem;
+    font-weight: 500;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+#game-over-banner .btn{
+    padding: 0.75rem 2rem;
+    font-size: 1.1rem;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+#game-over-banner .btn:hover{
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Rematch notification styling */
+.rematch-notification{
+    background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.rematch-notification p{
+    font-size: 1.3rem;
+    font-weight: 500;
+    margin-bottom: 1.5rem;
+}
+
+.rematch-notification .btn{
+    background: rgba(255, 255, 255, 0.9);
+    color: #27ae60;
+    border: none;
+    font-weight: 600;
+    padding: 0.75rem 2rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.rematch-notification .btn:hover{
+    background: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .your-turn i{
@@ -167,9 +226,10 @@ p {
 }
 
 .winning-index{
-    color:var(--bs-yellow)
+    color:var(--bs-yellow);
+    animation: pulse 1.5s infinite;
+    box-shadow: 0 0 15px var(--bs-yellow);
 }
-
 
 @keyframes fadeIn {
     0% {opacity:0;}
@@ -181,15 +241,55 @@ p {
     100% {opacity:1;}
 }
 
+@keyframes slideInFromTop {
+    0% {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 15px var(--bs-yellow);
+    }
+    50% {
+        box-shadow: 0 0 25px var(--bs-yellow), 0 0 35px var(--bs-yellow);
+    }
+    100% {
+        box-shadow: 0 0 15px var(--bs-yellow);
+    }
+}
+
 @media (max-width: 768px){
     .board-container{
         transform: scale(0.8);
     }
-
+    
+    #game-over-banner .greeting-wrapper{
+        max-width: 90%;
+        padding: 1.5rem;
+    }
+    
+    #game-over-banner .greeting-wrapper p{
+        font-size: 1.5rem;
+    }
 }
+
 @media (max-width: 576px){
     .board-container{
         transform: scale(0.5);
     }
-
+    
+    #game-over-banner .greeting-wrapper{
+        max-width: 95%;
+        padding: 1rem;
+    }
+    
+    #game-over-banner .greeting-wrapper p{
+        font-size: 1.3rem;
+    }
 }

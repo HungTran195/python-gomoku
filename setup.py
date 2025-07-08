@@ -19,7 +19,7 @@ def read_requirements():
 setup(
     name='python-gomoku',
     version='2.0.0',
-    description='A modern Gomoku (Five in a Row) game built with Django 5.3',
+    description='A modern Gomoku (Five in a Row) game built with FastAPI',
     long_description=read_readme(),
     long_description_content_type='text/markdown',
     author='Original Author + Contributors',
@@ -36,12 +36,11 @@ setup(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: 3.12',
-        'Framework :: Django',
-        'Framework :: Django :: 5.3',
+        'Framework :: FastAPI',
         'Topic :: Games/Entertainment :: Board Games',
         'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
     ],
-    keywords='gomoku, game, django, ai, minimax, websocket',
+    keywords='gomoku, game, fastapi, ai, minimax, websocket',
     project_urls={
         'Bug Reports': 'https://github.com/yourusername/python-gomoku/issues',
         'Source': 'https://github.com/yourusername/python-gomoku',

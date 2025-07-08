@@ -55,12 +55,20 @@ cover/
 *.mo
 *.pot
 
-# Django stuff:
+# Logs
 *.log
+
+# Environment variables
+.env
 local_settings.py
+
+# Database
 db.sqlite3
 db.sqlite3-journal
+
+# Static files (Django)
 staticfiles/
+
 # Flask stuff:
 instance/
 .webassets-cache

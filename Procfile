@@ -1,1 +1,0 @@
-web: gunicorn -k eventlet -w 1  python-gomoku.wsgi:application

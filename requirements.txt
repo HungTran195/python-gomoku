@@ -11,5 +11,3 @@ aiofiles>=23.2.1
 websockets>=12.0
 pydantic>=2.5.0
 pydantic-settings>=2.1.0
-pytest>=7.0.0
-pytest-asyncio>=0.21.0
