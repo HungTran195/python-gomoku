@@ -1,18 +1,5 @@
 'use strict';
-const socket = io();
-
-// Debug Socket.IO connection
-socket.on('connect', () => {
-    console.log('Connected to Socket.IO server');
-});
-
-socket.on('disconnect', () => {
-    console.log('Disconnected from Socket.IO server');
-});
-
-socket.on('connect_error', (error) => {
-    console.error('Socket.IO connection error:', error);
-});
+const socket = io().connect();
 const greetingCard = $('#greeting-card');
 const greetingContent = $('#greeting-content');
 const gameBoard = document.getElementById("game-board");

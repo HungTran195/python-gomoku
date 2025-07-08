@@ -1,12 +1,12 @@
 from random import random
 from typing import Optional, Tuple
 from .minimax import generate_next_move
-from django.conf import settings
+from config import settings
 
-NUMBER_OF_ROW = settings.NUMBER_OF_ROW
-NUMBER_OF_COL = settings.NUMBER_OF_COL
-MAX_NUMBER_OF_ROOM = settings.MAX_NUMBER_OF_ROOM
-AI_ID = settings.AI_ID
+NUMBER_OF_ROW = settings.number_of_row
+NUMBER_OF_COL = settings.number_of_col
+MAX_NUMBER_OF_ROOM = settings.max_number_of_room
+AI_ID = settings.ai_id
 
 class Helper:
     """Helper class for game utilities and AI move generation"""

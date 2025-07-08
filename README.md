@@ -1,16 +1,26 @@
-# Python Gomoku Game
+# FastAPI Gomoku Game
 
-A modern Gomoku (Five in a Row) game built with Django 5.3 and optimized game logic.
+A modern, high-performance Gomoku (Five in a Row) game built with **FastAPI** and optimized game logic.
+
+## 🚀 **New in FastAPI Version**
+
+- **FastAPI Backend**: Modern, fast, async web framework
+- **Automatic API Documentation**: Interactive docs at `/docs`
+- **WebSocket Support**: Real-time communication with Socket.IO
+- **Type Safety**: Full Pydantic validation and type hints
+- **Async Performance**: Non-blocking I/O for better scalability
+- **OpenAPI Specification**: Standard API documentation
 
 ## Features
 
-- **Modern Django 5.3**: Updated to the latest Django version with improved security and performance
+- **FastAPI 0.104.1**: Modern async web framework with automatic API docs
 - **Optimized Game Logic**: Enhanced minimax algorithm with alpha-beta pruning and numpy optimization
-- **Real-time Gameplay**: WebSocket-based real-time game updates
+- **Real-time Gameplay**: WebSocket-based real-time game updates with Socket.IO
 - **AI Opponent**: Intelligent AI using minimax algorithm with depth-limited search
 - **Player vs Player**: Support for both single-player (vs AI) and multiplayer modes
 - **Responsive UI**: Modern, responsive web interface
-- **Type Safety**: Full type hints and improved code quality
+- **Type Safety**: Full type hints and Pydantic validation
+- **API Documentation**: Automatic OpenAPI/Swagger documentation
 
 ## Game Logic Optimizations
 
@@ -33,7 +43,19 @@ A modern Gomoku (Five in a Row) game built with Django 5.3 and optimized game lo
 - Python 3.11 or higher
 - pip (Python package installer)
 
-### Setup Instructions
+### Quick Installation
+
+#### Unix/Linux/macOS
+```bash
+./install_fastapi.sh
+```
+
+#### Windows
+```cmd
+install_fastapi.bat
+```
+
+### Manual Installation
 
 1. **Clone the repository**
    ```bash
@@ -58,18 +80,15 @@ A modern Gomoku (Five in a Row) game built with Django 5.3 and optimized game lo
    # Edit .env file with your configuration
    ```
 
-5. **Run database migrations**
+5. **Start the development server**
    ```bash
-   python manage.py migrate
+   python main.py
    ```
 
-6. **Start the development server**
-   ```bash
-   python manage.py runserver
-   ```
-
-7. **Access the game**
-   Open your browser and navigate to `http://localhost:8000`
+6. **Access the game**
+   - Game: http://localhost:8000
+   - API Documentation: http://localhost:8000/docs
+   - Alternative API docs: http://localhost:8000/redoc
 
 ## Configuration
 
@@ -78,25 +97,42 @@ Create a `.env` file in the project root with the following variables:
 
 ```env
 DEBUG=True
-DJANGO_SECRET_KEY=your-secret-key-here
-ALLOWED_HOSTS_URL=localhost
+SECRET_KEY=your-secret-key-change-this-in-production
+HOST=0.0.0.0
+PORT=8000
+RELOAD=True
 ```
 
 ### Game Settings
-Game configuration can be modified in `python-gomoku/settings.py`:
+Game configuration can be modified in `config.py`:
 
 ```python
 # Board size
-NUMBER_OF_ROW = 15
-NUMBER_OF_COL = 15
+number_of_row = 15
+number_of_col = 15
 
 # Game types
-GAME_TYPE_SINGLE = 'single'
-GAME_TYPE_PVP = 'pvp'
+game_type_single = 'single'
+game_type_pvp = 'pvp'
 
 # AI configuration
-AI_ID = 'AI_0'
+ai_id = 'AI_0'
 ```
+
+## API Endpoints
+
+### Web Interface
+- `GET /` - Main game interface
+- `GET /health` - Health check endpoint
+- `GET /api/games` - Get active games information
+
+### WebSocket
+- `WebSocket /ws` - WebSocket endpoint for Socket.IO
+
+### Automatic Documentation
+- `GET /docs` - Interactive API documentation (Swagger UI)
+- `GET /redoc` - Alternative API documentation (ReDoc)
+- `GET /openapi.json` - OpenAPI specification
 
 ## Game Rules
 
@@ -108,28 +144,31 @@ AI_ID = 'AI_0'
 ## Technical Improvements
 
 ### Performance Optimizations
-- **Numpy Arrays**: Replaced Python lists with numpy arrays for faster board operations
+- **FastAPI**: 2-3x faster than Django for API endpoints
+- **Async Support**: Non-blocking I/O for better concurrency
+- **Numpy Arrays**: Faster board operations and memory efficiency
 - **Vectorized Operations**: Used numpy's vectorized operations for win detection
 - **Memory Management**: Optimized memory usage with efficient data structures
 - **Algorithm Efficiency**: Improved minimax algorithm with better pruning
 
 ### Code Quality
 - **Type Hints**: Added comprehensive type annotations throughout the codebase
+- **Pydantic Validation**: Automatic request/response validation
 - **Error Handling**: Improved error handling and validation
 - **Documentation**: Enhanced docstrings and code comments
 - **Code Structure**: Better separation of concerns and modular design
 
 ### Security Enhancements
-- **Latest Django**: Updated to Django 5.3 with latest security patches
-- **Security Headers**: Added comprehensive security headers
-- **Input Validation**: Enhanced input validation and sanitization
-- **CSRF Protection**: Proper CSRF protection implementation
+- **FastAPI Security**: Built-in security features and validation
+- **Input Validation**: Automatic request validation with Pydantic
+- **CORS Support**: Configurable CORS middleware
+- **Type Safety**: Reduced runtime errors with compile-time checks
 
 ## Development
 
 ### Running Tests
 ```bash
-python manage.py test
+python test_optimizations.py
 ```
 
 ### Code Style
@@ -147,19 +186,45 @@ pycodestyle game/
 
 ## Deployment
 
-### Heroku Deployment
-The project is configured for Heroku deployment with:
-- `Procfile` for process management
-- `runtime.txt` for Python version specification
-- `django-heroku` for Heroku-specific settings
-
-### Production Settings
+### Production Deployment
 For production deployment:
 1. Set `DEBUG=False`
 2. Configure proper `SECRET_KEY`
-3. Set up production database
-4. Configure static file serving
+3. Set up production ASGI server (Gunicorn + Uvicorn)
+4. Configure reverse proxy (Nginx)
 5. Set up proper logging
+
+### Docker Deployment
+```dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+COPY . .
+EXPOSE 8000
+
+CMD ["uvicorn", "main:socket_app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+### Heroku Deployment
+The project can be deployed to Heroku with:
+- `Procfile` for process management
+- `runtime.txt` for Python version specification
+- Environment variables for configuration
+
+## FastAPI vs Django Comparison
+
+| Feature | Django | FastAPI |
+|---------|--------|---------|
+| **Performance** | Good | Excellent (2-3x faster) |
+| **Async Support** | Limited | Full async/await |
+| **API Documentation** | Manual | Automatic (OpenAPI) |
+| **Type Safety** | Optional | Built-in (Pydantic) |
+| **Learning Curve** | Steep | Gentle |
+| **Ecosystem** | Mature | Growing |
+| **Real-time** | Requires Django Channels | Native WebSocket support |
 
 ## Contributing
 
@@ -175,6 +240,8 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Acknowledgments
 
-- Django framework and community
+- FastAPI framework and community
+- Django framework (original inspiration)
 - Numpy for efficient numerical operations
 - Socket.IO for real-time communication
+- Pydantic for data validation

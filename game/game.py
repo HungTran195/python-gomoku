@@ -1,13 +1,13 @@
 from .helper import Helper
-from django.conf import settings
+from config import settings
 from typing import List, Tuple, Optional, Set
 import numpy as np
 
-NUMBER_OF_ROW = settings.NUMBER_OF_ROW
-NUMBER_OF_COL = settings.NUMBER_OF_COL
+NUMBER_OF_ROW = settings.number_of_row
+NUMBER_OF_COL = settings.number_of_col
 
-GAME_TYPE_SINGLE = settings.GAME_TYPE_SINGLE
-GAME_TYPE_PVP = settings.GAME_TYPE_PVP
+GAME_TYPE_SINGLE = settings.game_type_single
+GAME_TYPE_PVP = settings.game_type_pvp
 
 class Game:
     """
