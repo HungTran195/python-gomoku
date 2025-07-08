@@ -28,10 +28,6 @@ Gomoku is a strategic board game where two players take turns placing stones on 
 ### Installation
 
 1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd python-gomoku
-   ```
 
 2. **Install dependencies**
    ```bash
