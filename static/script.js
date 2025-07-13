@@ -458,4 +458,68 @@ const init= () =>{
 
 };
 
+// Copy game ID to clipboard
+const copyGameId = () => {
+    const gameId = document.getElementById('game-id').textContent.trim();
+    const copyBtn = event.target.closest('button');
+    const originalText = copyBtn.innerHTML;
+    
+    // Try modern clipboard API first
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(gameId).then(() => {
+            // Show feedback to user
+            copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            copyBtn.classList.remove('btn-outline-secondary');
+            copyBtn.classList.add('btn-success');
+            
+            setTimeout(() => {
+                copyBtn.innerHTML = originalText;
+                copyBtn.classList.remove('btn-success');
+                copyBtn.classList.add('btn-outline-secondary');
+            }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy game ID: ', err);
+            fallbackCopyTextToClipboard(gameId, copyBtn, originalText);
+        });
+    } else {
+        // Fallback for older browsers
+        fallbackCopyTextToClipboard(gameId, copyBtn, originalText);
+    }
+};
+
+// Fallback copy method for older browsers
+const fallbackCopyTextToClipboard = (text, copyBtn, originalText) => {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            // Show feedback to user
+            copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            copyBtn.classList.remove('btn-outline-secondary');
+            copyBtn.classList.add('btn-success');
+            
+            setTimeout(() => {
+                copyBtn.innerHTML = originalText;
+                copyBtn.classList.remove('btn-success');
+                copyBtn.classList.add('btn-outline-secondary');
+            }, 2000);
+        } else {
+            alert('Failed to copy game ID. Please copy manually: ' + text);
+        }
+    } catch (err) {
+        console.error('Fallback copy failed: ', err);
+        alert('Failed to copy game ID. Please copy manually: ' + text);
+    }
+    
+    document.body.removeChild(textArea);
+};
+
 init();

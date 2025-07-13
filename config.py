@@ -29,9 +29,6 @@ class Settings(BaseSettings):
     port: int = 8000
     reload: bool = True
     
-    # Security
-    secret_key: str = "your-secret-key-change-this-in-production"
-    
     # Static files
     static_dir: str = "static"
     templates_dir: str = "templates"

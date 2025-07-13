@@ -35,7 +35,10 @@
                 </div>
                 <div class=" fs-6 w-75 d-flex flex-column text-end ">
                     <div class="d-flex justify-content-end align-items-center">
-                        <p id="game-id" class="text-light fs-3"> {{game_id}}</p>
+                        <p id="game-id" class="text-light fs-3 me-2"> {{game_id}}</p>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyGameId()" title="Copy Game ID">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
                     </div>
                     <figcaption class="blockquote-footer">
                         Share the game ID to your friend to play
